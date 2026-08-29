@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Perekam Notulen</title>
+  <style>
+    :root {
+      --primary:#0f766e;
+      --primary-dark:#115e59;
+      --bg:#f4f7f8;
+      --card:#ffffff;
+      --text:#172033;
+      --muted:#64748b;
+      --border:#dbe3ea;
+      --danger:#b91c1c;
+      --warning:#a16207;
+      --success:#166534;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0;
+      padding:18px;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap { max-width:760px; margin:0 auto; }
+    .hero {
+      background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+      color:#fff;
+      border-radius:18px;
+      padding:20px;
+      margin-bottom:14px;
+    }
+    .hero h1 { margin:0 0 6px; font-size:23px; }
+    .hero p { margin:0; opacity:.9; font-size:13px; line-height:1.5; }
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px;
+      margin-bottom:14px;
+    }
+    .meeting {
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    .meeting-name {
+      font-size:17px;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+    .status {
+      display:inline-flex;
+      align-items:center;
+      padding:7px 11px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:12px;
+      background:#e2e8f0;
+      color:#475569;
+      margin:14px 0;
+    }
+    .status.listening { background:#fee2e2; color:#991b1b; }
+    .status.paused { background:#fef3c7; color:#92400e; }
+    .status.done { background:#dcfce7; color:#166534; }
+
+    .controls { display:flex; flex-wrap:wrap; gap:8px; }
+    button {
+      border:0;
+      border-radius:11px;
+      padding:11px 14px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      min-height:44px;
+    }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .primary { background:var(--primary); color:#fff; }
+    .secondary { background:#e2e8f0; color:#334155; }
+    .danger { background:#fee2e2; color:#991b1b; }
+
+    .meter {
+      height:8px;
+      margin:16px 0 6px;
+      background:#e2e8f0;
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .meter span {
+      display:block;
+      width:0%;
+      height:100%;
+      background:var(--primary);
+      transition:width .15s linear;
+    }
+    label { display:block; font-size:13px; font-weight:700; margin:0 0 7px; }
+    textarea {
+      width:100%;
+      min-height:260px;
+      resize:vertical;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      font:15px/1.55 Arial, Helvetica, sans-serif;
+      color:var(--text);
+    }
+    textarea:focus {
+      outline:3px solid rgba(15,118,110,.12);
+      border-color:var(--primary);
+    }
+    .interim {
+      min-height:44px;
+      padding:10px 12px;
+      margin-top:10px;
+      background:#f8fafc;
+      border:1px dashed var(--border);
+      border-radius:10px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+    .note {
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      margin-top:10px;
+    }
+    .message {
+      margin-top:12px;
+      font-size:13px;
+      font-weight:700;
+      min-height:18px;
+    }
+    @media (max-width:520px) {
+      body { padding:10px; }
+      button { flex:1 1 140px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>🎙️ Perekam Notulen</h1>
+      <p>Halaman ini menggunakan mikrofon secara langsung. Biarkan aplikasi Notulen tetap terbuka di tab/jendela sebelumnya.</p>
+    </section>
+
+    <section class="card">
+      <div class="meeting">Rapat</div>
+      <div id="meetingName" class="meeting-name">Rapat</div>
+
+      <div id="status" class="status">Belum aktif</div>
+
+      <div class="controls">
+        <button id="btnStart" class="primary" type="button">🎙️ Mulai Mencatat</button>
+        <button id="btnPause" class="secondary" type="button" disabled>⏸ Jeda</button>
+        <button id="btnStop" class="danger" type="button" disabled>⏹ Selesai</button>
+        <button id="btnClose" class="secondary" type="button">Tutup Perekam</button>
+      </div>
+
+      <div class="meter" aria-hidden="true"><span id="meterBar"></span></div>
+
+      <div class="note">
+        Bahasa pengenalan suara: <strong id="languageLabel">id-ID</strong>.
+        Setiap hasil final akan dikirim otomatis ke aplikasi Notulen.
+      </div>
+      <div id="message" class="message"></div>
+    </section>
+
+    <section class="card">
+      <label for="transcript">Transkrip pada Perekam</label>
+      <textarea id="transcript" placeholder="Teks yang sudah dikenali akan muncul di sini."></textarea>
+      <div id="interim" class="interim">Teks sementara akan terlihat di sini saat Anda berbicara.</div>
+    </section>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  const el = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const language = params.get('lang') || 'id-ID';
+  const meeting = params.get('meeting') || 'Rapat';
+
+  const state = {
+    recognition: null,
+    supported: false,
+    listening: false,
+    paused: false,
+    stopping: false,
+    shouldRestart: false,
+    meterTimer: null,
+    meterValue: 0,
+    meterDirection: 1
+  };
+
+  function init() {
+    el('meetingName').textContent = meeting;
+    el('languageLabel').textContent = language;
+    bindEvents();
+    initRecognition();
+    notifyOpener({ type: 'NOTULEN_RECORDER_READY' });
+  }
+
+  function bindEvents() {
+    el('btnStart').addEventListener('click', startRecognition);
+    el('btnPause').addEventListener('click', pauseRecognition);
+    el('btnStop').addEventListener('click', stopRecognition);
+    el('btnClose').addEventListener('click', closeRecorder);
+    window.addEventListener('beforeunload', function () {
+      notifyOpener({ type: 'NOTULEN_RECORDER_CLOSED' });
+    });
+  }
+
+  function initRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      state.supported = false;
+      setStatus('Browser tidak mendukung Speech Recognition', 'paused');
+      el('btnStart').disabled = true;
+      showMessage('Gunakan Google Chrome versi terbaru pada desktop/laptop.', 'error');
+      notifyOpener({
+        type: 'NOTULEN_RECORDER_ERROR',
+        message: 'Browser perekam tidak mendukung Speech Recognition.'
+      });
+      return;
+    }
+
+    state.supported = true;
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = language;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = function () {
+      state.listening = true;
+      setStatus('🔴 Sedang mendengarkan', 'listening');
+      updateButtons();
+      startMeter();
+      notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'listening' });
+    };
+
+    recognition.onresult = function (event) {
+      let interimText = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const text = String(result[0].transcript || '').trim();
+
+        if (!text) continue;
+
+        if (result.isFinal) {
+          const finalText = normalizeSentence(text);
+          appendTranscript(finalText);
+          notifyOpener({
+            type: 'NOTULEN_TRANSCRIPT_CHUNK',
+            text: finalText
+          });
+          el('interim').textContent = 'Menunggu kalimat berikutnya…';
+        } else {
+          interimText += text + ' ';
+        }
+      }
+
+      if (interimText.trim()) {
+        el('interim').textContent = interimText.trim();
+      }
+    };
+
+    recognition.onerror = function (event) {
+      const code = String(event.error || 'unknown');
+
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        state.shouldRestart = false;
+        state.listening = false;
+        stopMeter();
+        setStatus('Akses mikrofon ditolak', 'paused');
+        updateButtons();
+
+        const msg = 'Akses mikrofon ditolak pada halaman perekam. Klik ikon gembok pada halaman ini dan izinkan Microphone.';
+        showMessage(msg, 'error');
+        notifyOpener({ type: 'NOTULEN_RECORDER_ERROR', message: msg });
+        return;
+      }
+
+      if (code === 'no-speech') {
+        showMessage('Belum ada suara yang dikenali. Perekam tetap menunggu.', 'info');
+        return;
+      }
+
+      if (code === 'audio-capture') {
+        state.shouldRestart = false;
+        const msg = 'Mikrofon tidak ditemukan atau sedang digunakan aplikasi lain.';
+        showMessage(msg, 'error');
+        notifyOpener({ type: 'NOTULEN_RECORDER_ERROR', message: msg });
+        return;
+      }
+
+      showMessage('Speech Recognition: ' + code, 'error');
+    };
+
+    recognition.onend = function () {
+      state.listening = false;
+      stopMeter();
+
+      if (state.shouldRestart && !state.paused && !state.stopping) {
+        setTimeout(function () {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.log(e);
+          }
+        }, 250);
+        return;
+      }
+
+      if (state.paused) {
+        setStatus('⏸ Dijeda', 'paused');
+        notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'paused' });
+      } else if (state.stopping) {
+        setStatus('✓ Selesai', 'done');
+        notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'stopped' });
+      } else {
+        setStatus('Belum aktif', '');
+      }
+
+      updateButtons();
+    };
+
+    state.recognition = recognition;
+  }
+
+  function startRecognition() {
+    if (!state.supported || !state.recognition || state.listening) return;
+
+    state.paused = false;
+    state.stopping = false;
+    state.shouldRestart = true;
+
+    try {
+      state.recognition.start();
+      showMessage('Memulai mikrofon…', 'info');
+    } catch (e) {
+      showMessage('Perekam belum dapat dimulai. Coba tekan lagi.', 'error');
+    }
+  }
+
+  function pauseRecognition() {
+    if (!state.recognition) return;
+
+    state.paused = true;
+    state.stopping = false;
+    state.shouldRestart = false;
+
+    try {
+      state.recognition.stop();
+    } catch (e) {}
+
+    setStatus('⏸ Dijeda', 'paused');
+    updateButtons();
+    notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'paused' });
+  }
+
+  function stopRecognition() {
+    if (!state.recognition) return;
+
+    state.paused = false;
+    state.stopping = true;
+    state.shouldRestart = false;
+
+    try {
+      state.recognition.stop();
+    } catch (e) {}
+
+    setStatus('✓ Selesai', 'done');
+    updateButtons();
+    notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'stopped' });
+    showMessage('Perekaman selesai. Transkrip yang sudah final telah dikirim ke Notulen.', 'success');
+  }
+
+  function closeRecorder() {
+    if (state.listening) {
+      stopRecognition();
+    }
+
+    notifyOpener({ type: 'NOTULEN_RECORDER_CLOSED' });
+
+    setTimeout(function () {
+      window.close();
+
+      if (!window.closed) {
+        showMessage('Silakan tutup tab/jendela ini secara manual.', 'info');
+      }
+    }, 150);
+  }
+
+  function appendTranscript(text) {
+    const box = el('transcript');
+    const current = box.value.trim();
+    box.value = current ? current + '\n' + text : text;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function normalizeSentence(text) {
+    let s = String(text || '').trim();
+    if (!s) return '';
+    s = s.charAt(0).toUpperCase() + s.slice(1);
+    if (!/[.!?]$/.test(s)) s += '.';
+    return s;
+  }
+
+  function notifyOpener(payload) {
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(payload, '*');
+      }
+    } catch (e) {
+      console.log('Tidak dapat mengirim pesan ke aplikasi Notulen:', e);
+    }
+  }
+
+  function setStatus(text, mode) {
+    const status = el('status');
+    status.textContent = text;
+    status.className = 'status';
+    if (mode) status.classList.add(mode);
+  }
+
+  function updateButtons() {
+    el('btnStart').disabled = !state.supported || state.listening;
+    el('btnPause').disabled = !state.listening;
+    el('btnStop').disabled = !state.listening && !state.paused;
+  }
+
+  function showMessage(text, type) {
+    const box = el('message');
+    box.textContent = text || '';
+    if (type === 'error') box.style.color = '#b91c1c';
+    else if (type === 'success') box.style.color = '#166534';
+    else box.style.color = '#475569';
+  }
+
+  function startMeter() {
+    stopMeter();
+    state.meterValue = 12;
+    state.meterDirection = 1;
+
+    state.meterTimer = setInterval(function () {
+      state.meterValue += state.meterDirection * (4 + Math.random() * 12);
+      if (state.meterValue >= 90) state.meterDirection = -1;
+      if (state.meterValue <= 10) state.meterDirection = 1;
+      el('meterBar').style.width = Math.max(5, Math.min(95, state.meterValue)) + '%';
+    }, 180);
+  }
+
+  function stopMeter() {
+    if (state.meterTimer) {
+      clearInterval(state.meterTimer);
+      state.meterTimer = null;
+    }
+    el('meterBar').style.width = '0%';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
