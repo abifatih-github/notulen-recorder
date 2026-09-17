@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.1</title>
+  <title>Perekam Notulen Rapat v3.0.2.2</title>
 
   <style>
     :root {
@@ -146,6 +146,49 @@
       color:#134e4a;
       font-size:12px;
       line-height:1.4;
+    }
+
+
+    .audio-setup-card {
+      margin-top:12px;
+      padding:11px;
+      border:1px solid #cfe8e4;
+      border-radius:11px;
+      background:#f8fffd;
+    }
+
+    .audio-setup-grid {
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:8px;
+    }
+
+    .setup-field label {
+      display:block;
+      margin-bottom:5px;
+      color:#475569;
+      font-size:7px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+    }
+
+    .setup-field select {
+      width:100%;
+      min-height:38px;
+      padding:7px 9px;
+      border:1px solid #cbd5e1;
+      border-radius:9px;
+      background:#fff;
+      color:#1f2937;
+      font-size:9px;
+    }
+
+    .audio-setup-help {
+      margin-top:7px;
+      color:#64748b;
+      font-size:8px;
+      line-height:1.5;
     }
 
     .status-grid {
@@ -469,6 +512,8 @@
     }
 
     @media (max-width:560px) {
+      .audio-setup-grid { grid-template-columns:1fr; }
+
       body {
         padding:8px;
       }
@@ -521,12 +566,36 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.1</div>
+        <div class="version">v3.0.2.2</div>
       </div>
 
       <div class="meeting-card">
         <span>Rapat</span>
         <strong id="meetingName">Rapat</strong>
+      </div>
+
+
+      <div class="audio-setup-card">
+        <div class="audio-setup-grid">
+          <div class="setup-field">
+            <label for="micSelect">Mikrofon</label>
+            <select id="micSelect">
+              <option value="">Mikrofon Default</option>
+            </select>
+          </div>
+
+          <div class="setup-field">
+            <label for="audioProfile">Kualitas Suara</label>
+            <select id="audioProfile">
+              <option value="meeting" selected>Jernih untuk Rapat (Disarankan)</option>
+              <option value="natural">Natural / Tanpa Penguatan</option>
+              <option value="strong">Suara Lemah / Penguatan Lebih Tinggi</option>
+            </select>
+          </div>
+        </div>
+        <div class="audio-setup-help">
+          Pilih mikrofon yang benar sebelum menekan <strong>Mulai Mencatat</strong>.
+        </div>
       </div>
 
       <div class="status-grid">
@@ -552,6 +621,7 @@
         <div id="speechChip" class="protection-chip">📝 Transkripsi belum aktif</div>
         <div id="wakeChip" class="protection-chip">☀️ Wake Lock belum aktif</div>
         <div id="backupChip" class="protection-chip">🛡️ Backup lokal diperiksa</div>
+        <div id="levelChip" class="protection-chip">🎚️ Level belum diuji</div>
       </div>
 
       <div class="meter" aria-label="Level mikrofon">
@@ -663,7 +733,7 @@
     </section>
 
     <div class="foot-note">
-      Audio cadangan v3.0.2.1 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.2 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -713,6 +783,11 @@
       stream:null,
       recordingStream:null,
       captureDestination:null,
+      highpassNode:null,
+      presenceNode:null,
+      compressorNode:null,
+      gainNode:null,
+      selectedDeviceId:'',
       mediaRecorder:null,
       mediaMime:'',
       audioChunks:[],
@@ -728,7 +803,10 @@
       meterFrame:null,
       signalPeak:0,
       signalSeen:false,
+      signalRms:0,
+      signalLevel:'unknown',
       lowSignalWarned:false,
+      highSignalWarned:false,
       wakeLock:null,
       persistentBackup:true,
       recoveryMeta:null,
@@ -748,6 +826,8 @@
       el('btnClearBackup').addEventListener('click', clearCurrentBackup);
       el('btnRecover').addEventListener('click', recoverPreviousSession);
       el('btnDiscardRecovery').addEventListener('click', discardRecovery);
+      el('micSelect').addEventListener('change', function(){ state.selectedDeviceId = el('micSelect').value || ''; });
+      el('audioProfile').addEventListener('change', applyAudioProfile);
 
       document.addEventListener(
         'visibilitychange',
@@ -770,11 +850,12 @@
 
       initRecognition();
       updateCapabilityChips();
+      enumerateMicrophones();
       checkRecovery();
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.1',
+        version:'3.0.2.2',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -1046,7 +1127,10 @@
       state.persistentBackup = true;
       state.signalPeak = 0;
       state.signalSeen = false;
+      state.signalRms = 0;
+      state.signalLevel = 'unknown';
       state.lowSignalWarned = false;
+      state.highSignalWarned = false;
 
       el('recoveryCard').hidden = true;
       el('audioDiagnostic').hidden = true;
@@ -1059,22 +1143,36 @@
           'recovering'
         );
 
+        const selectedDeviceId = el('micSelect').value || '';
+
+        const audioConstraints = {
+          echoCancellation:true,
+          noiseSuppression:true,
+          autoGainControl:true,
+          channelCount:{ ideal:1 },
+          sampleRate:{ ideal:48000 },
+          sampleSize:{ ideal:16 }
+        };
+
+        if (selectedDeviceId) {
+          audioConstraints.deviceId = { exact:selectedDeviceId };
+        }
+
         const stream =
           await navigator.mediaDevices
             .getUserMedia({
-              audio:{
-                echoCancellation:true,
-                noiseSuppression:true,
-                autoGainControl:true
-              }
+              audio:audioConstraints
             });
 
         state.stream = stream;
 
-        setChip(
-          'micChip',
-          'ok',
-          '🎤 Mikrofon aktif'
+        const micTrack = stream.getAudioTracks()[0];
+        const micLabel = micTrack && micTrack.label ? micTrack.label : 'Mikrofon aktif';
+
+        setChip('micChip','ok','🎤 ' + micLabel);
+
+        await enumerateMicrophones(
+          micTrack && micTrack.getSettings ? micTrack.getSettings().deviceId : ''
         );
 
         const recorderStream =
@@ -1163,6 +1261,8 @@
         mediaRecorder.start(4000);
 
         state.sessionActive = true;
+        el('micSelect').disabled = true;
+        el('audioProfile').disabled = true;
 
         setChip(
           'audioChip',
@@ -1199,6 +1299,8 @@
 
       } catch (err) {
         state.sessionActive = false;
+        el('micSelect').disabled = false;
+        el('audioProfile').disabled = false;
 
         stopMediaTracks();
 
@@ -1631,6 +1733,8 @@
       state.sessionActive = false;
       state.stopping = false;
       state.paused = false;
+      el('micSelect').disabled = false;
+      el('audioProfile').disabled = false;
       state.shouldRestartRecognition = false;
 
       stopTimer();
@@ -1797,9 +1901,7 @@
     async function setupAudioCapturePipeline(stream) {
       stopMeter();
 
-      const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
 
       if (!AudioContext) {
         setupSimpleTrackDiagnostics(stream);
@@ -1813,41 +1915,139 @@
           try { await context.resume(); } catch (err) {}
         }
 
-        const analyser = context.createAnalyser();
-        analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.65;
-
         const source = context.createMediaStreamSource(stream);
+
+        const highpass = context.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 80;
+        highpass.Q.value = 0.7;
+
+        const presence = context.createBiquadFilter();
+        presence.type = 'peaking';
+        presence.frequency.value = 2600;
+        presence.Q.value = 0.85;
+
+        const compressor = context.createDynamicsCompressor();
+        compressor.threshold.value = -24;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 3.2;
+        compressor.attack.value = 0.006;
+        compressor.release.value = 0.28;
+
+        const gain = context.createGain();
+
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.55;
+
         const destination = context.createMediaStreamDestination();
 
-        source.connect(analyser);
-        source.connect(destination);
+        source.connect(highpass);
+        highpass.connect(presence);
+        presence.connect(compressor);
+        compressor.connect(gain);
+        gain.connect(analyser);
+        analyser.connect(destination);
 
         state.audioContext = context;
-        state.analyser = analyser;
         state.meterSource = source;
+        state.highpassNode = highpass;
+        state.presenceNode = presence;
+        state.compressorNode = compressor;
+        state.gainNode = gain;
+        state.analyser = analyser;
         state.captureDestination = destination;
+
+        applyAudioProfile();
 
         const recorderStream = destination.stream;
         const recorderTrack = recorderStream.getAudioTracks()[0];
 
         if (!recorderTrack) {
-          throw new Error('Web Audio bridge tidak menghasilkan track audio.');
+          throw new Error('Jalur pemrosesan audio tidak menghasilkan track.');
         }
 
         recorderTrack.enabled = true;
         startSignalMeter();
+
         return recorderStream;
 
       } catch (err) {
         state.captureDestination = null;
         setupSimpleTrackDiagnostics(stream);
+
         notify({
           type:'NOTULEN_RECORDER_WARNING',
-          message:'Web Audio bridge tidak tersedia. Recorder memakai jalur audio langsung sebagai fallback.'
+          message:'Pemrosesan suara tidak tersedia. Recorder memakai mikrofon langsung sebagai fallback.'
         });
+
         return stream;
       }
+    }
+
+    function applyAudioProfile() {
+      if (!state.gainNode || !state.presenceNode || !state.compressorNode) return;
+
+      const profile = el('audioProfile') ? el('audioProfile').value : 'meeting';
+
+      if (profile === 'natural') {
+        state.gainNode.gain.value = 1.0;
+        state.presenceNode.gain.value = 0;
+        state.compressorNode.threshold.value = -18;
+        state.compressorNode.ratio.value = 2.0;
+        return;
+      }
+
+      if (profile === 'strong') {
+        state.gainNode.gain.value = 2.15;
+        state.presenceNode.gain.value = 4.0;
+        state.compressorNode.threshold.value = -30;
+        state.compressorNode.ratio.value = 4.0;
+        return;
+      }
+
+      state.gainNode.gain.value = 1.55;
+      state.presenceNode.gain.value = 2.8;
+      state.compressorNode.threshold.value = -24;
+      state.compressorNode.ratio.value = 3.2;
+    }
+
+    async function enumerateMicrophones(preferredDeviceId) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const microphones = devices.filter(function(device) {
+          return device.kind === 'audioinput';
+        });
+
+        const select = el('micSelect');
+        const current =
+          preferredDeviceId ||
+          select.value ||
+          state.selectedDeviceId ||
+          '';
+
+        select.innerHTML = '<option value="">Mikrofon Default</option>';
+
+        microphones.forEach(function(device, index) {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || ('Mikrofon ' + (index + 1));
+          select.appendChild(option);
+        });
+
+        if (
+          current &&
+          Array.from(select.options).some(function(option) {
+            return option.value === current;
+          })
+        ) {
+          select.value = current;
+        }
+
+        state.selectedDeviceId = select.value || '';
+      } catch (err) {}
     }
 
     function startSignalMeter() {
@@ -1872,27 +2072,48 @@
         }
 
         const rms = Math.sqrt(sumSquares / Math.max(1, timeData.length));
-        const level = Math.max(0, Math.min(1, rms * 3.7));
 
+        state.signalRms = rms;
         state.signalPeak = Math.max(state.signalPeak, peak);
-        if (rms > 0.012 || peak > 0.035) state.signalSeen = true;
 
+        if (rms > 0.010 || peak > 0.030) {
+          state.signalSeen = true;
+        }
+
+        if (rms < 0.015) {
+          state.signalLevel = 'low';
+          setChip('levelChip','warn','🎚️ Level suara lemah');
+        } else if (rms > 0.22 || peak > 0.92) {
+          state.signalLevel = 'high';
+          state.highSignalWarned = true;
+          setChip('levelChip','warn','🎚️ Level terlalu keras');
+        } else {
+          state.signalLevel = 'good';
+          setChip('levelChip','ok','🎚️ Level suara optimal');
+        }
+
+        const level = Math.max(0, Math.min(1, rms * 4.0));
         const percent = state.paused ? 0 : Math.max(1, Math.round(level * 100));
+
         el('meterBar').style.width = percent + '%';
 
         if (
           state.sessionActive &&
           !state.paused &&
-          state.elapsedSeconds >= 8 &&
+          state.elapsedSeconds >= 6 &&
           !state.signalSeen &&
           !state.lowSignalWarned
         ) {
           state.lowSignalWarned = true;
-          setChip('micChip','warn','🎤 Sinyal mikrofon sangat rendah');
-          show('Sinyal audio sangat rendah. Periksa mikrofon/input Windows sebelum melanjutkan rapat.','error');
+
+          show(
+            'Sinyal suara masih terlalu lemah. Pilih mikrofon yang benar atau gunakan profil “Suara Lemah / Penguatan Lebih Tinggi”.',
+            'error'
+          );
+
           notify({
             type:'NOTULEN_RECORDER_WARNING',
-            message:'Sinyal mikrofon sangat rendah. Periksa perangkat input sebelum melanjutkan.'
+            message:'Sinyal mikrofon sangat rendah. Periksa mikrofon yang dipilih atau gunakan profil penguatan.'
           });
         }
 
@@ -1930,6 +2151,10 @@
       state.analyser = null;
       state.meterSource = null;
       state.captureDestination = null;
+      state.highpassNode = null;
+      state.presenceNode = null;
+      state.compressorNode = null;
+      state.gainNode = null;
     }
 
     function stopMediaTracks() {
@@ -2179,9 +2404,42 @@
         ? 'Sinyal mikrofon terdeteksi saat merekam.'
         : 'Sinyal mikrofon tidak terdeteksi dengan cukup kuat.';
 
-      const trackInfo = state.mediaMime ? 'Codec: ' + state.mediaMime + '. ' : '';
-      node.className = 'audio-diagnostic ' + (state.signalSeen ? 'ok' : 'warn');
-      node.textContent = (state.signalSeen ? '✓ ' : '⚠️ ') + signalText + ' ' + trackInfo + 'Ukuran audio: ' + formatBytes(blob && blob.size ? blob.size : 0) + '.';
+      const levelLabel =
+        state.signalLevel === 'good'
+          ? 'optimal'
+          : (
+              state.signalLevel === 'high'
+                ? 'terlalu keras'
+                : 'lemah'
+            );
+
+      const profileLabel =
+        el('audioProfile') &&
+        el('audioProfile').selectedOptions[0]
+          ? el('audioProfile').selectedOptions[0].textContent
+          : '-';
+
+      const trackInfo =
+        state.mediaMime
+          ? 'Codec: ' + state.mediaMime + '. '
+          : '';
+
+      node.className =
+        'audio-diagnostic ' +
+        (state.signalSeen ? 'ok' : 'warn');
+
+      node.textContent =
+        (state.signalSeen ? '✓ ' : '⚠️ ') +
+        signalText +
+        ' Level: ' +
+        levelLabel +
+        '. Profil: ' +
+        profileLabel +
+        '. ' +
+        trackInfo +
+        'Ukuran audio: ' +
+        formatBytes(blob && blob.size ? blob.size : 0) +
+        '.';
     }
 
     function clearAudioPreview() {
@@ -2439,7 +2697,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.1',
+        version:'3.0.2.2',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
