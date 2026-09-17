@@ -1,474 +1,3042 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Perekam Notulen</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Perekam Notulen Rapat v3.0.2</title>
+
   <style>
     :root {
+      --bg:#f5f8fa;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#64748b;
+      --border:#dfe7eb;
       --primary:#0f766e;
       --primary-dark:#115e59;
-      --bg:#f4f7f8;
-      --card:#ffffff;
-      --text:#172033;
-      --muted:#64748b;
-      --border:#dbe3ea;
+      --primary-soft:#ccfbf1;
       --danger:#b91c1c;
-      --warning:#a16207;
-      --success:#166534;
+      --danger-soft:#fee2e2;
+      --warning:#b45309;
+      --warning-soft:#fef3c7;
+      --info:#0369a1;
+      --info-soft:#e0f2fe;
+      --success:#15803d;
+      --success-soft:#dcfce7;
+      --shadow:0 12px 34px rgba(15,23,42,.09);
     }
-    * { box-sizing:border-box; }
+
+    * {
+      box-sizing:border-box;
+    }
+
+    html,
     body {
       margin:0;
-      padding:18px;
-      font-family:Arial, Helvetica, sans-serif;
-      background:var(--bg);
+      min-height:100%;
+      background:
+        radial-gradient(circle at 10% 0%,rgba(20,184,166,.08),transparent 28%),
+        var(--bg);
       color:var(--text);
+      font-family:Inter,Arial,sans-serif;
     }
-    .wrap { max-width:760px; margin:0 auto; }
-    .hero {
-      background:linear-gradient(135deg,var(--primary-dark),var(--primary));
-      color:#fff;
-      border-radius:18px;
-      padding:20px;
-      margin-bottom:14px;
+
+    body {
+      padding:14px;
     }
-    .hero h1 { margin:0 0 6px; font-size:23px; }
-    .hero p { margin:0; opacity:.9; font-size:13px; line-height:1.5; }
-    .card {
-      background:var(--card);
+
+    button,
+    input,
+    textarea {
+      font:inherit;
+    }
+
+    button {
+      cursor:pointer;
+    }
+
+    button:disabled {
+      opacity:.48;
+      cursor:not-allowed;
+    }
+
+    .app {
+      width:min(100%,720px);
+      margin:0 auto;
+    }
+
+    .top-card {
+      padding:15px;
       border:1px solid var(--border);
       border-radius:16px;
-      padding:18px;
-      margin-bottom:14px;
+      background:var(--card);
+      box-shadow:var(--shadow);
     }
-    .meeting {
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:4px;
+
+    .brand-row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    .meeting-name {
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+
+    .brand-icon {
+      width:42px;
+      height:42px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 42px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#ccfbf1,#dbeafe);
+      font-size:21px;
+    }
+
+    .brand h1 {
+      margin:0;
+      color:#17332f;
       font-size:17px;
-      font-weight:700;
-      overflow-wrap:anywhere;
     }
-    .status {
+
+    .brand p {
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:10px;
+    }
+
+    .version {
+      padding:5px 8px;
+      border-radius:999px;
+      background:#eef2ff;
+      color:#4f46e5;
+      font-size:8px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .meeting-card {
+      margin-top:12px;
+      padding:10px 12px;
+      border:1px solid #d7ebe7;
+      border-radius:11px;
+      background:#f0fdfa;
+    }
+
+    .meeting-card span {
+      display:block;
+      color:#0f766e;
+      font-size:8px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .meeting-card strong {
+      display:block;
+      margin-top:4px;
+      overflow-wrap:anywhere;
+      color:#134e4a;
+      font-size:12px;
+      line-height:1.4;
+    }
+
+    .status-grid {
+      display:grid;
+      grid-template-columns:1.15fr .85fr .85fr;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .status-box {
+      min-width:0;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:#fff;
+    }
+
+    .status-box span {
+      display:block;
+      color:var(--muted);
+      font-size:7px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+    }
+
+    .status-box strong {
+      display:block;
+      margin-top:5px;
+      color:#334155;
+      font-size:10px;
+      line-height:1.3;
+    }
+
+    #status.listening {
+      color:var(--danger);
+    }
+
+    #status.paused {
+      color:var(--warning);
+    }
+
+    #status.done {
+      color:var(--success);
+    }
+
+    #status.recovering {
+      color:#6d28d9;
+    }
+
+    #timer {
+      font-variant-numeric:tabular-nums;
+      font-size:15px;
+    }
+
+    .protection-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:9px;
+    }
+
+    .protection-chip {
       display:inline-flex;
       align-items:center;
-      padding:7px 11px;
+      gap:5px;
+      padding:5px 7px;
+      border:1px solid #dce7ea;
       border-radius:999px;
-      font-weight:700;
-      font-size:12px;
-      background:#e2e8f0;
-      color:#475569;
-      margin:14px 0;
+      background:#f8fafc;
+      color:#64748b;
+      font-size:7px;
+      font-weight:900;
     }
-    .status.listening { background:#fee2e2; color:#991b1b; }
-    .status.paused { background:#fef3c7; color:#92400e; }
-    .status.done { background:#dcfce7; color:#166534; }
 
-    .controls { display:flex; flex-wrap:wrap; gap:8px; }
-    button {
-      border:0;
-      border-radius:11px;
-      padding:11px 14px;
-      font-size:14px;
-      font-weight:700;
-      cursor:pointer;
-      min-height:44px;
+    .protection-chip.ok {
+      border-color:#bbf7d0;
+      background:#f0fdf4;
+      color:#166534;
     }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .primary { background:var(--primary); color:#fff; }
-    .secondary { background:#e2e8f0; color:#334155; }
-    .danger { background:#fee2e2; color:#991b1b; }
+
+    .protection-chip.warn {
+      border-color:#fde68a;
+      background:#fffbeb;
+      color:#92400e;
+    }
 
     .meter {
-      height:8px;
-      margin:16px 0 6px;
-      background:#e2e8f0;
-      border-radius:999px;
+      height:9px;
+      margin-top:10px;
       overflow:hidden;
+      border-radius:999px;
+      background:#e2e8f0;
     }
-    .meter span {
-      display:block;
+
+    .meter > div {
       width:0%;
       height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#14b8a6,#22c55e,#f59e0b);
+      transition:width .08s linear;
+    }
+
+    .controls {
+      display:grid;
+      grid-template-columns:1.4fr 1fr 1fr;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .btn {
+      min-height:43px;
+      padding:9px 12px;
+      border:1px solid transparent;
+      border-radius:11px;
+      font-size:10px;
+      font-weight:900;
+    }
+
+    .btn-primary {
       background:var(--primary);
-      transition:width .15s linear;
+      color:#fff;
     }
-    label { display:block; font-size:13px; font-weight:700; margin:0 0 7px; }
-    textarea {
-      width:100%;
-      min-height:260px;
-      resize:vertical;
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:12px;
-      font:15px/1.55 Arial, Helvetica, sans-serif;
-      color:var(--text);
+
+    .btn-primary:hover:not(:disabled) {
+      background:var(--primary-dark);
     }
-    textarea:focus {
-      outline:3px solid rgba(15,118,110,.12);
-      border-color:var(--primary);
+
+    .btn-outline {
+      border-color:#cbd5e1;
+      background:#fff;
+      color:#334155;
     }
-    .interim {
-      min-height:44px;
-      padding:10px 12px;
-      margin-top:10px;
-      background:#f8fafc;
-      border:1px dashed var(--border);
-      border-radius:10px;
-      color:var(--muted);
-      font-size:13px;
+
+    .btn-danger {
+      background:#fff1f2;
+      border-color:#fecdd3;
+      color:#be123c;
+    }
+
+    .message {
+      min-height:18px;
+      margin-top:9px;
+      color:#475569;
+      font-size:9px;
       line-height:1.5;
     }
-    .note {
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.55;
+
+    .warning-banner {
       margin-top:10px;
+      padding:10px 11px;
+      border:1px solid #fde68a;
+      border-radius:10px;
+      background:#fffbeb;
+      color:#854d0e;
+      font-size:8px;
+      line-height:1.55;
     }
-    .message {
-      margin-top:12px;
-      font-size:13px;
-      font-weight:700;
-      min-height:18px;
+
+    .warning-banner strong {
+      color:#713f12;
     }
-    @media (max-width:520px) {
-      body { padding:10px; }
-      button { flex:1 1 140px; }
+
+    .background-alert {
+      margin-top:10px;
+      padding:10px;
+      border:1px solid #facc15;
+      border-radius:10px;
+      background:#fef9c3;
+      color:#713f12;
+      font-size:9px;
+      font-weight:800;
+      line-height:1.5;
+    }
+
+    .card {
+      margin-top:11px;
+      padding:13px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:var(--card);
+      box-shadow:0 5px 18px rgba(15,23,42,.045);
+    }
+
+    .card-head {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:9px;
+    }
+
+    .card-head h2 {
+      margin:0;
+      color:#334155;
+      font-size:12px;
+    }
+
+    .card-head p {
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:8px;
+      line-height:1.45;
+    }
+
+    .badge {
+      padding:4px 7px;
+      border-radius:999px;
+      background:#f1f5f9;
+      color:#64748b;
+      font-size:7px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .badge.active {
+      background:var(--success-soft);
+      color:var(--success);
+    }
+
+    .interim {
+      min-height:42px;
+      padding:9px;
+      border:1px dashed #cbd5e1;
+      border-radius:9px;
+      background:#f8fafc;
+      color:#64748b;
+      font-size:9px;
+      font-style:italic;
+      line-height:1.5;
+    }
+
+    textarea {
+      width:100%;
+      min-height:175px;
+      resize:vertical;
+      padding:10px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      outline:none;
+      background:#fff;
+      color:#1f2937;
+      font-size:10px;
+      line-height:1.55;
+    }
+
+    textarea:focus {
+      border-color:#2dd4bf;
+      box-shadow:0 0 0 3px rgba(45,212,191,.13);
+    }
+
+    .audio-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:9px;
+    }
+
+    audio {
+      width:100%;
+      margin-top:9px;
+    }
+
+    .recovery {
+      margin-top:11px;
+      padding:11px;
+      border:1px solid #c4b5fd;
+      border-radius:11px;
+      background:#f5f3ff;
+    }
+
+    .recovery h3 {
+      margin:0;
+      color:#5b21b6;
+      font-size:10px;
+    }
+
+    .recovery p {
+      margin:4px 0 0;
+      color:#6d28d9;
+      font-size:8px;
+      line-height:1.5;
+    }
+
+    .recovery-actions {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+
+    .foot-note {
+      margin:12px 4px 2px;
+      color:#64748b;
+      font-size:7.5px;
+      line-height:1.55;
+      text-align:center;
+    }
+
+    @media (max-width:560px) {
+      body {
+        padding:8px;
+      }
+
+      .top-card,
+      .card {
+        border-radius:12px;
+      }
+
+      .brand-row {
+        align-items:flex-start;
+      }
+
+      .status-grid {
+        grid-template-columns:1fr 1fr;
+      }
+
+      .status-grid .status-box:first-child {
+        grid-column:1 / -1;
+      }
+
+      .controls {
+        grid-template-columns:1fr;
+      }
+
+      .controls .btn {
+        width:100%;
+      }
+
+      .audio-actions {
+        flex-direction:column;
+      }
+
+      .audio-actions .btn {
+        width:100%;
+      }
     }
   </style>
 </head>
+
 <body>
-  <main class="wrap">
-    <section class="hero">
-      <h1>🎙️ Perekam Notulen</h1>
-      <p>Halaman ini menggunakan mikrofon secara langsung. Biarkan aplikasi Notulen tetap terbuka di tab/jendela sebelumnya.</p>
-    </section>
+  <main class="app">
+    <section class="top-card">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-icon">🎙️</div>
+          <div>
+            <h1>Perekam Notulen Rapat</h1>
+            <p>Audio backup + transkripsi live + pemulihan otomatis</p>
+          </div>
+        </div>
 
-    <section class="card">
-      <div class="meeting">Rapat</div>
-      <div id="meetingName" class="meeting-name">Rapat</div>
+        <div class="version">v3.0.2</div>
+      </div>
 
-      <div id="status" class="status">Belum aktif</div>
+      <div class="meeting-card">
+        <span>Rapat</span>
+        <strong id="meetingName">Rapat</strong>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-box">
+          <span>Status</span>
+          <strong id="status">Belum aktif</strong>
+        </div>
+
+        <div class="status-box">
+          <span>Durasi</span>
+          <strong id="timer">00:00:00</strong>
+        </div>
+
+        <div class="status-box">
+          <span>Bahasa</span>
+          <strong id="languageLabel">id-ID</strong>
+        </div>
+      </div>
+
+      <div class="protection-row">
+        <div id="micChip" class="protection-chip">🎤 Mikrofon belum aktif</div>
+        <div id="audioChip" class="protection-chip">💾 Audio belum aktif</div>
+        <div id="speechChip" class="protection-chip">📝 Transkripsi belum aktif</div>
+        <div id="wakeChip" class="protection-chip">☀️ Wake Lock belum aktif</div>
+        <div id="backupChip" class="protection-chip">🛡️ Backup lokal diperiksa</div>
+      </div>
+
+      <div class="meter" aria-label="Level mikrofon">
+        <div id="meterBar"></div>
+      </div>
 
       <div class="controls">
-        <button id="btnStart" class="primary" type="button">🎙️ Mulai Mencatat</button>
-        <button id="btnPause" class="secondary" type="button" disabled>⏸ Jeda</button>
-        <button id="btnStop" class="danger" type="button" disabled>⏹ Selesai</button>
-        <button id="btnClose" class="secondary" type="button">Tutup Perekam</button>
+        <button type="button" id="btnStart" class="btn btn-primary">
+          🔴 Mulai Mencatat
+        </button>
+
+        <button type="button" id="btnPause" class="btn btn-outline" disabled>
+          ⏸ Jeda
+        </button>
+
+        <button type="button" id="btnStop" class="btn btn-danger" disabled>
+          ■ Selesai
+        </button>
       </div>
 
-      <div class="meter" aria-hidden="true"><span id="meterBar"></span></div>
-
-      <div class="note">
-        Bahasa pengenalan suara: <strong id="languageLabel">id-ID</strong>.
-        Setiap hasil final akan dikirim otomatis ke aplikasi Notulen.
-      </div>
       <div id="message" class="message"></div>
+
+      <div class="warning-banner">
+        <strong>⚠️ Penting:</strong>
+        jangan menutup halaman atau membuat perangkat sleep selama rapat.
+        Di desktop, audio biasanya tetap berjalan saat minimize, tetapi browser/OS tetap dapat
+        menangguhkan proses. Di HP, background atau layar mati lebih berisiko menghentikan perekaman.
+        Jika transkripsi terputus, audio cadangan menjadi sumber pemulihan.
+      </div>
+
+      <div id="backgroundAlert" class="background-alert" hidden>
+        ⚠️ Perekam sempat berada di background/minimize. Periksa status audio dan transkripsi.
+        Sistem akan mencoba memulihkan transkripsi live secara otomatis.
+      </div>
+    </section>
+
+    <section id="recoveryCard" class="recovery" hidden>
+      <h3>🛟 Cadangan sesi sebelumnya ditemukan</h3>
+      <p id="recoveryText">
+        Potongan audio/transkrip lokal tersedia di browser ini.
+      </p>
+
+      <div class="recovery-actions">
+        <button type="button" id="btnRecover" class="btn btn-primary">
+          Pulihkan Cadangan
+        </button>
+
+        <button type="button" id="btnDiscardRecovery" class="btn btn-outline">
+          Hapus Cadangan Lama
+        </button>
+      </div>
     </section>
 
     <section class="card">
-      <label for="transcript">Transkrip pada Perekam</label>
-      <textarea id="transcript" placeholder="Teks yang sudah dikenali akan muncul di sini."></textarea>
-      <div id="interim" class="interim">Teks sementara akan terlihat di sini saat Anda berbicara.</div>
+      <div class="card-head">
+        <div>
+          <h2>📝 Transkripsi Live</h2>
+          <p>Kalimat final langsung dikirim kembali ke Form Notulen.</p>
+        </div>
+
+        <span id="transcriptBadge" class="badge">Menunggu</span>
+      </div>
+
+      <div id="interim" class="interim">
+        Tekan “Mulai Mencatat” untuk memulai.
+      </div>
+
+      <textarea
+        id="transcript"
+        placeholder="Transkrip final akan muncul di sini..."
+        readonly
+      ></textarea>
     </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>💾 Audio Cadangan Lokal</h2>
+          <p>
+            Audio disimpan sebagai potongan lokal di browser selama sesi.
+            Setelah selesai, audio dapat diputar dan diunduh.
+          </p>
+        </div>
+
+        <span id="audioBadge" class="badge">Belum ada</span>
+      </div>
+
+      <audio id="audioPreview" controls hidden></audio>
+
+      <div class="audio-actions">
+        <button type="button" id="btnDownloadAudio" class="btn btn-primary" disabled>
+          ⬇ Unduh Audio Cadangan
+        </button>
+
+        <button type="button" id="btnClearBackup" class="btn btn-outline" disabled>
+          Hapus Cadangan Lokal
+        </button>
+
+        <button type="button" id="btnClose" class="btn btn-outline">
+          Tutup Perekam
+        </button>
+      </div>
+    </section>
+
+    <div class="foot-note">
+      Audio cadangan v3.0.2 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
+    </div>
   </main>
 
-<script>
-(function () {
-  'use strict';
+  <script>
+  (function(){
+    'use strict';
 
-  const el = id => document.getElementById(id);
-  const params = new URLSearchParams(location.search);
-  const language = params.get('lang') || 'id-ID';
-  const meeting = params.get('meeting') || 'Rapat';
-
-  const state = {
-    recognition: null,
-    supported: false,
-    listening: false,
-    paused: false,
-    stopping: false,
-    shouldRestart: false,
-    meterTimer: null,
-    meterValue: 0,
-    meterDirection: 1
-  };
-
-  function init() {
-    el('meetingName').textContent = meeting;
-    el('languageLabel').textContent = language;
-    bindEvents();
-    initRecognition();
-    notifyOpener({ type: 'NOTULEN_RECORDER_READY' });
-  }
-
-  function bindEvents() {
-    el('btnStart').addEventListener('click', startRecognition);
-    el('btnPause').addEventListener('click', pauseRecognition);
-    el('btnStop').addEventListener('click', stopRecognition);
-    el('btnClose').addEventListener('click', closeRecorder);
-    window.addEventListener('beforeunload', function () {
-      notifyOpener({ type: 'NOTULEN_RECORDER_CLOSED' });
-    });
-  }
-
-  function initRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      state.supported = false;
-      setStatus('Browser tidak mendukung Speech Recognition', 'paused');
-      el('btnStart').disabled = true;
-      showMessage('Gunakan Google Chrome versi terbaru pada desktop/laptop.', 'error');
-      notifyOpener({
-        type: 'NOTULEN_RECORDER_ERROR',
-        message: 'Browser perekam tidak mendukung Speech Recognition.'
-      });
-      return;
-    }
-
-    state.supported = true;
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = language;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = function () {
-      state.listening = true;
-      setStatus('🔴 Sedang mendengarkan', 'listening');
-      updateButtons();
-      startMeter();
-      notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'listening' });
+    const el = function(id) {
+      return document.getElementById(id);
     };
 
-    recognition.onresult = function (event) {
-      let interimText = '';
+    const params = new URLSearchParams(location.search);
+    const language = params.get('lang') || 'id-ID';
+    const meeting = params.get('meeting') || 'Rapat';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const text = String(result[0].transcript || '').trim();
+    const parentOriginParam =
+      params.get('parentOrigin') || '*';
 
-        if (!text) continue;
+    let parentOrigin = '*';
 
-        if (result.isFinal) {
-          const finalText = normalizeSentence(text);
-          appendTranscript(finalText);
-          notifyOpener({
-            type: 'NOTULEN_TRANSCRIPT_CHUNK',
-            text: finalText
+    try {
+      if (parentOriginParam !== '*') {
+        parentOrigin =
+          new URL(parentOriginParam).origin;
+      }
+    } catch (err) {
+      parentOrigin = '*';
+    }
+
+    const DB_NAME = 'NotulenRecorderDB';
+    const DB_VERSION = 1;
+    const CHUNK_STORE = 'chunks';
+    const SESSION_STORE = 'sessions';
+    const RECOVERY_KEY = 'notulenRecorderRecoveryV302';
+
+    const state = {
+      recognition:null,
+      speechSupported:false,
+      recognitionListening:false,
+      recognitionInterrupted:false,
+      shouldRestartRecognition:false,
+      recognitionRestartTimer:null,
+      sessionActive:false,
+      paused:false,
+      stopping:false,
+      stream:null,
+      mediaRecorder:null,
+      mediaMime:'',
+      audioChunks:[],
+      audioBlob:null,
+      audioUrl:'',
+      sessionId:'',
+      chunkIndex:0,
+      elapsedSeconds:0,
+      timerId:null,
+      audioContext:null,
+      analyser:null,
+      meterSource:null,
+      meterFrame:null,
+      wakeLock:null,
+      persistentBackup:true,
+      recoveryMeta:null,
+      backgrounded:false
+    };
+
+    function init() {
+      el('meetingName').textContent = meeting;
+      el('languageLabel').textContent = language;
+
+      el('btnStart').addEventListener('click', startOrResumeSession);
+      el('btnPause').addEventListener('click', pauseSession);
+      el('btnStop').addEventListener('click', stopSession);
+      el('btnClose').addEventListener('click', closeRecorder);
+      el('btnDownloadAudio').addEventListener('click', downloadAudio);
+      el('btnClearBackup').addEventListener('click', clearCurrentBackup);
+      el('btnRecover').addEventListener('click', recoverPreviousSession);
+      el('btnDiscardRecovery').addEventListener('click', discardRecovery);
+
+      document.addEventListener(
+        'visibilitychange',
+        handleVisibilityChange
+      );
+
+      window.addEventListener(
+        'beforeunload',
+        handleBeforeUnload
+      );
+
+      window.addEventListener(
+        'pagehide',
+        function() {
+          notify({
+            type:'NOTULEN_RECORDER_CLOSED'
           });
-          el('interim').textContent = 'Menunggu kalimat berikutnya…';
-        } else {
-          interimText += text + ' ';
+        }
+      );
+
+      initRecognition();
+      updateCapabilityChips();
+      checkRecovery();
+
+      notify({
+        type:'NOTULEN_RECORDER_READY',
+        version:'3.0.2',
+        speechSupported:state.speechSupported,
+        mediaRecorderSupported:
+          Boolean(
+            navigator.mediaDevices &&
+            navigator.mediaDevices.getUserMedia &&
+            window.MediaRecorder
+          ),
+        recoveryAvailable:
+          Boolean(state.recoveryMeta)
+      });
+    }
+
+    function initRecognition() {
+      const SR =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+      if (!SR) {
+        state.speechSupported = false;
+
+        setChip(
+          'speechChip',
+          'warn',
+          '📝 Speech Recognition tidak tersedia'
+        );
+
+        return;
+      }
+
+      state.speechSupported = true;
+
+      const recognition = new SR();
+
+      recognition.lang = language;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = function() {
+        state.recognitionListening = true;
+        state.recognitionInterrupted = false;
+
+        setChip(
+          'speechChip',
+          'ok',
+          '📝 Transkripsi live aktif'
+        );
+
+        el('transcriptBadge').textContent =
+          'Live';
+
+        el('transcriptBadge').className =
+          'badge active';
+
+        if (
+          state.sessionActive &&
+          !state.paused
+        ) {
+          setStatus(
+            '🔴 Sedang merekam',
+            'listening'
+          );
+        }
+
+        notifyStatus('listening');
+      };
+
+      recognition.onresult = function(event) {
+        let interim = '';
+
+        for (
+          let i = event.resultIndex;
+          i < event.results.length;
+          i++
+        ) {
+          const result = event.results[i];
+
+          const text =
+            String(
+              result[0].transcript || ''
+            ).trim();
+
+          if (!text) continue;
+
+          if (result.isFinal) {
+            const finalText =
+              normalizeSentence(text);
+
+            appendTranscript(finalText);
+            persistTranscript();
+
+            notify({
+              type:'NOTULEN_TRANSCRIPT_CHUNK',
+              text:finalText,
+              sessionId:state.sessionId
+            });
+
+            el('interim').textContent =
+              'Menunggu kalimat berikutnya…';
+          } else {
+            interim += text + ' ';
+          }
+        }
+
+        if (interim.trim()) {
+          el('interim').textContent =
+            interim.trim();
+        }
+      };
+
+      recognition.onerror = function(event) {
+        const code =
+          String(event.error || 'unknown');
+
+        if (
+          code === 'not-allowed' ||
+          code === 'service-not-allowed'
+        ) {
+          state.shouldRestartRecognition = false;
+          state.recognitionListening = false;
+
+          setChip(
+            'speechChip',
+            'warn',
+            '📝 Akses transkripsi ditolak'
+          );
+
+          const msg =
+            'Akses mikrofon/Speech Recognition ditolak. Audio cadangan dapat tetap digunakan jika izin MediaRecorder tersedia.';
+
+          show(msg, 'error');
+
+          notify({
+            type:'NOTULEN_RECORDER_ERROR',
+            message:msg
+          });
+
+          return;
+        }
+
+        if (code === 'audio-capture') {
+          state.recognitionListening = false;
+
+          setChip(
+            'speechChip',
+            'warn',
+            '📝 Mikrofon transkripsi bermasalah'
+          );
+
+          notify({
+            type:'NOTULEN_RECORDER_WARNING',
+            message:
+              'Speech Recognition kehilangan akses mikrofon. Audio cadangan tetap dipertahankan jika masih aktif.'
+          });
+
+          return;
+        }
+
+        if (
+          code === 'no-speech' ||
+          code === 'aborted'
+        ) {
+          return;
+        }
+
+        show(
+          'Speech Recognition: ' + code,
+          'info'
+        );
+      };
+
+      recognition.onend = function() {
+        state.recognitionListening = false;
+
+        if (
+          state.shouldRestartRecognition &&
+          state.sessionActive &&
+          !state.paused &&
+          !state.stopping
+        ) {
+          state.recognitionInterrupted = true;
+
+          if (document.hidden) {
+            setChip(
+              'speechChip',
+              'warn',
+              '📝 Transkripsi menunggu halaman aktif'
+            );
+
+            notify({
+              type:'NOTULEN_RECORDER_BACKGROUND',
+              sessionId:state.sessionId
+            });
+
+            return;
+          }
+
+          scheduleRecognitionRestart();
+          return;
+        }
+
+        if (state.paused) {
+          setChip(
+            'speechChip',
+            'warn',
+            '📝 Transkripsi dijeda'
+          );
+        } else if (
+          !state.sessionActive ||
+          state.stopping
+        ) {
+          setChip(
+            'speechChip',
+            '',
+            '📝 Transkripsi selesai'
+          );
+        }
+      };
+
+      state.recognition = recognition;
+    }
+
+    async function startOrResumeSession() {
+      if (state.sessionActive && state.paused) {
+        await resumeSession();
+        return;
+      }
+
+      if (state.sessionActive) {
+        return;
+      }
+
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia ||
+        !window.MediaRecorder
+      ) {
+        const msg =
+          'Browser ini tidak mendukung MediaRecorder/getUserMedia yang diperlukan untuk audio cadangan.';
+
+        show(msg, 'error');
+
+        notify({
+          type:'NOTULEN_RECORDER_ERROR',
+          message:msg
+        });
+
+        return;
+      }
+
+      clearAudioPreview();
+
+      state.sessionId =
+        'REC-' +
+        Date.now() +
+        '-' +
+        Math.random()
+          .toString(36)
+          .slice(2, 8)
+          .toUpperCase();
+
+      state.chunkIndex = 0;
+      state.audioChunks = [];
+      state.elapsedSeconds = 0;
+      state.stopping = false;
+      state.paused = false;
+      state.backgrounded = false;
+      state.recognitionInterrupted = false;
+      state.persistentBackup = true;
+
+      updateTimer();
+
+      try {
+        setStatus(
+          'Meminta akses mikrofon…',
+          'recovering'
+        );
+
+        const stream =
+          await navigator.mediaDevices
+            .getUserMedia({
+              audio:{
+                echoCancellation:true,
+                noiseSuppression:true,
+                autoGainControl:true
+              }
+            });
+
+        state.stream = stream;
+
+        setChip(
+          'micChip',
+          'ok',
+          '🎤 Mikrofon aktif'
+        );
+
+        setupAudioMeter(stream);
+
+        const mimeType =
+          chooseAudioMimeType();
+
+        const options =
+          mimeType
+            ? { mimeType:mimeType }
+            : undefined;
+
+        const mediaRecorder =
+          options
+            ? new MediaRecorder(
+                stream,
+                options
+              )
+            : new MediaRecorder(stream);
+
+        state.mediaRecorder =
+          mediaRecorder;
+
+        state.mediaMime =
+          mediaRecorder.mimeType ||
+          mimeType ||
+          'audio/webm';
+
+        mediaRecorder.ondataavailable =
+          handleAudioChunk;
+
+        mediaRecorder.onerror =
+          function(event) {
+            const msg =
+              'MediaRecorder mengalami masalah: ' +
+              (
+                event &&
+                event.error &&
+                event.error.message
+                  ? event.error.message
+                  : 'unknown'
+              );
+
+            show(msg, 'error');
+
+            notify({
+              type:'NOTULEN_RECORDER_ERROR',
+              message:msg
+            });
+          };
+
+        mediaRecorder.onstop =
+          finalizeAudioRecording;
+
+        await saveSessionMeta({
+          sessionId:state.sessionId,
+          meeting:meeting,
+          language:language,
+          status:'recording',
+          mimeType:state.mediaMime,
+          startedAt:
+            new Date().toISOString(),
+          duration:0,
+          transcript:''
+        });
+
+        persistRecoveryMeta('recording');
+
+        mediaRecorder.start(4000);
+
+        state.sessionActive = true;
+
+        setChip(
+          'audioChip',
+          'ok',
+          '💾 Audio cadangan aktif'
+        );
+
+        el('audioBadge').textContent =
+          'Merekam';
+
+        el('audioBadge').className =
+          'badge active';
+
+        startTimer();
+        await requestWakeLock();
+        startRecognition();
+
+        setStatus(
+          '🔴 Sedang merekam',
+          'listening'
+        );
+
+        show(
+          state.speechSupported
+            ? 'Audio cadangan dan transkripsi live dimulai.'
+            : 'Audio cadangan dimulai. Browser ini tidak menyediakan Speech Recognition live.',
+          state.speechSupported
+            ? 'success'
+            : 'info'
+        );
+
+        updateButtons();
+        notifyStatus('recording');
+
+      } catch (err) {
+        state.sessionActive = false;
+
+        stopMediaTracks();
+
+        setChip(
+          'micChip',
+          'warn',
+          '🎤 Akses mikrofon gagal'
+        );
+
+        setChip(
+          'audioChip',
+          'warn',
+          '💾 Audio tidak aktif'
+        );
+
+        setStatus(
+          'Akses mikrofon gagal',
+          'paused'
+        );
+
+        const message =
+          err && err.name === 'NotAllowedError'
+            ? 'Izin mikrofon ditolak. Izinkan mikrofon untuk halaman GitHub Pages perekam, lalu coba lagi.'
+            : (
+                'Gagal membuka mikrofon: ' +
+                (
+                  err && err.message
+                    ? err.message
+                    : err
+                )
+              );
+
+        show(message, 'error');
+
+        notify({
+          type:'NOTULEN_RECORDER_ERROR',
+          message:message
+        });
+
+        updateButtons();
+      }
+    }
+
+    async function resumeSession() {
+      state.paused = false;
+      state.stopping = false;
+
+      if (
+        state.mediaRecorder &&
+        state.mediaRecorder.state === 'paused'
+      ) {
+        try {
+          state.mediaRecorder.resume();
+        } catch (err) {}
+      }
+
+      setChip(
+        'audioChip',
+        'ok',
+        '💾 Audio cadangan aktif'
+      );
+
+      el('audioBadge').textContent =
+        'Merekam';
+
+      el('audioBadge').className =
+        'badge active';
+
+      state.shouldRestartRecognition = true;
+
+      await requestWakeLock();
+      startRecognition();
+
+      persistRecoveryMeta('recording');
+      updateSessionStatus('recording');
+
+      setStatus(
+        '🔴 Sedang merekam',
+        'listening'
+      );
+
+      show('Perekaman dilanjutkan.', 'success');
+      updateButtons();
+      notifyStatus('recording');
+    }
+
+    function pauseSession() {
+      if (
+        !state.sessionActive ||
+        state.paused
+      ) {
+        return;
+      }
+
+      state.paused = true;
+      state.shouldRestartRecognition = false;
+
+      clearRecognitionRestartTimer();
+
+      if (
+        state.recognition &&
+        state.recognitionListening
+      ) {
+        try {
+          state.recognition.stop();
+        } catch (err) {}
+      }
+
+      if (
+        state.mediaRecorder &&
+        state.mediaRecorder.state === 'recording'
+      ) {
+        try {
+          state.mediaRecorder.pause();
+        } catch (err) {}
+      }
+
+      releaseWakeLock();
+
+      setStatus(
+        '⏸ Dijeda',
+        'paused'
+      );
+
+      setChip(
+        'audioChip',
+        'warn',
+        '💾 Audio dijeda'
+      );
+
+      setChip(
+        'speechChip',
+        'warn',
+        '📝 Transkripsi dijeda'
+      );
+
+      el('audioBadge').textContent =
+        'Dijeda';
+
+      persistRecoveryMeta('paused');
+      updateSessionStatus('paused');
+
+      show(
+        'Perekaman dijeda. Tekan “Lanjutkan Mencatat” untuk meneruskan.',
+        'info'
+      );
+
+      updateButtons();
+      notifyStatus('paused');
+    }
+
+    async function stopSession() {
+      if (!state.sessionActive) {
+        return;
+      }
+
+      state.stopping = true;
+      state.paused = false;
+      state.shouldRestartRecognition = false;
+
+      clearRecognitionRestartTimer();
+
+      if (
+        state.recognition &&
+        state.recognitionListening
+      ) {
+        try {
+          state.recognition.stop();
+        } catch (err) {}
+      }
+
+      const snapshot =
+        el('transcript').value.trim();
+
+      notify({
+        type:'NOTULEN_TRANSCRIPT_SNAPSHOT',
+        text:snapshot,
+        sessionId:state.sessionId
+      });
+
+      setStatus(
+        'Menyelesaikan audio…',
+        'recovering'
+      );
+
+      show(
+        'Menutup rekaman dan menyiapkan audio cadangan…',
+        'info'
+      );
+
+      if (
+        state.mediaRecorder &&
+        state.mediaRecorder.state !== 'inactive'
+      ) {
+        try {
+          state.mediaRecorder.stop();
+        } catch (err) {
+          finalizeAudioRecording();
+        }
+      } else {
+        finalizeAudioRecording();
+      }
+
+      releaseWakeLock();
+      updateButtons();
+    }
+
+    function startRecognition() {
+      if (
+        !state.speechSupported ||
+        !state.recognition ||
+        !state.sessionActive ||
+        state.paused ||
+        state.stopping ||
+        state.recognitionListening
+      ) {
+        return;
+      }
+
+      state.shouldRestartRecognition = true;
+
+      try {
+        state.recognition.start();
+      } catch (err) {
+        scheduleRecognitionRestart();
+      }
+    }
+
+    function scheduleRecognitionRestart() {
+      clearRecognitionRestartTimer();
+
+      if (
+        !state.sessionActive ||
+        state.paused ||
+        state.stopping ||
+        document.hidden
+      ) {
+        return;
+      }
+
+      setStatus(
+        '↻ Memulihkan transkripsi…',
+        'recovering'
+      );
+
+      setChip(
+        'speechChip',
+        'warn',
+        '📝 Memulihkan transkripsi…'
+      );
+
+      notifyStatus('recovering');
+
+      state.recognitionRestartTimer =
+        setTimeout(
+          function() {
+            state.recognitionRestartTimer = null;
+
+            if (
+              !state.sessionActive ||
+              state.paused ||
+              state.stopping ||
+              document.hidden
+            ) {
+              return;
+            }
+
+            try {
+              state.recognition.start();
+            } catch (err) {
+              state.recognitionInterrupted = true;
+            }
+          },
+          550
+        );
+    }
+
+    function clearRecognitionRestartTimer() {
+      if (state.recognitionRestartTimer) {
+        clearTimeout(
+          state.recognitionRestartTimer
+        );
+
+        state.recognitionRestartTimer = null;
+      }
+    }
+
+    async function handleVisibilityChange() {
+      if (!state.sessionActive) return;
+
+      if (document.hidden) {
+        state.backgrounded = true;
+
+        el('backgroundAlert').hidden = false;
+
+        notify({
+          type:'NOTULEN_RECORDER_BACKGROUND',
+          sessionId:state.sessionId
+        });
+
+        show(
+          'Perekam masuk background/minimize. Audio cadangan tetap dicoba; jangan membuat perangkat sleep.',
+          'info'
+        );
+
+        return;
+      }
+
+      if (state.backgrounded) {
+        el('backgroundAlert').hidden = false;
+
+        await requestWakeLock();
+
+        if (
+          state.recognitionInterrupted &&
+          !state.paused &&
+          !state.stopping
+        ) {
+          scheduleRecognitionRestart();
+        } else if (
+          state.speechSupported &&
+          !state.recognitionListening &&
+          !state.paused &&
+          !state.stopping
+        ) {
+          scheduleRecognitionRestart();
+        }
+
+        notify({
+          type:'NOTULEN_RECORDER_RECOVERED',
+          sessionId:state.sessionId
+        });
+
+        show(
+          'Perekam kembali aktif. Status transkripsi diperiksa dan dipulihkan bila perlu.',
+          'success'
+        );
+
+        state.backgrounded = false;
+      }
+    }
+
+    function handleBeforeUnload(event) {
+      if (
+        state.sessionActive &&
+        !state.stopping
+      ) {
+        event.preventDefault();
+        event.returnValue = '';
+        return '';
+      }
+
+      notify({
+        type:'NOTULEN_RECORDER_CLOSED'
+      });
+    }
+
+    function closeRecorder() {
+      if (
+        state.sessionActive &&
+        !state.stopping
+      ) {
+        show(
+          'Perekaman masih aktif. Tekan “Selesai” terlebih dahulu agar audio cadangan disimpan dengan benar.',
+          'error'
+        );
+
+        return;
+      }
+
+      notify({
+        type:'NOTULEN_RECORDER_CLOSED'
+      });
+
+      setTimeout(
+        function() {
+          window.close();
+        },
+        120
+      );
+    }
+
+    async function handleAudioChunk(event) {
+      if (
+        !event.data ||
+        !event.data.size
+      ) {
+        return;
+      }
+
+      state.audioChunks.push(event.data);
+
+      const index = state.chunkIndex++;
+
+      try {
+        await saveChunk(
+          state.sessionId,
+          index,
+          event.data,
+          state.mediaMime
+        );
+
+        setChip(
+          'backupChip',
+          'ok',
+          '🛡️ Backup lokal tersimpan'
+        );
+      } catch (err) {
+        state.persistentBackup = false;
+
+        setChip(
+          'backupChip',
+          'warn',
+          '🛡️ Backup persisten gagal'
+        );
+
+        notify({
+          type:'NOTULEN_RECORDER_WARNING',
+          message:
+            'Penyimpanan audio persisten browser tidak tersedia. Audio masih disimpan di memori selama halaman perekam tetap terbuka.'
+        });
+      }
+    }
+
+    async function finalizeAudioRecording() {
+      if (!state.sessionActive && state.audioBlob) {
+        return;
+      }
+
+      state.sessionActive = false;
+      state.stopping = false;
+      state.paused = false;
+      state.shouldRestartRecognition = false;
+
+      stopTimer();
+      stopMeter();
+      stopMediaTracks();
+      releaseWakeLock();
+
+      let blob = null;
+
+      if (state.audioChunks.length) {
+        blob = new Blob(
+          state.audioChunks,
+          {
+            type:
+              state.mediaMime ||
+              'audio/webm'
+          }
+        );
+      }
+
+      if (
+        (!blob || !blob.size) &&
+        state.sessionId
+      ) {
+        try {
+          blob =
+            await buildBlobFromStoredChunks(
+              state.sessionId
+            );
+        } catch (err) {}
+      }
+
+      if (blob && blob.size) {
+        setAudioBlob(blob);
+
+        el('audioBadge').textContent =
+          'Siap • ' +
+          formatBytes(blob.size);
+
+        el('audioBadge').className =
+          'badge active';
+
+        setChip(
+          'audioChip',
+          'ok',
+          '💾 Audio cadangan siap'
+        );
+
+        setStatus(
+          '✓ Selesai',
+          'done'
+        );
+
+        el('btnClearBackup').disabled =
+          false;
+
+        await saveSessionMeta({
+          sessionId:state.sessionId,
+          meeting:meeting,
+          language:language,
+          status:'stopped',
+          mimeType:
+            blob.type ||
+            state.mediaMime ||
+            'audio/webm',
+          startedAt:'',
+          duration:state.elapsedSeconds,
+          transcript:
+            el('transcript').value.trim()
+        });
+
+        persistRecoveryMeta('stopped');
+
+        notify({
+          type:'NOTULEN_RECORDER_AUDIO_READY',
+          sessionId:state.sessionId,
+          duration:
+            formatDuration(
+              state.elapsedSeconds
+            ),
+          size:blob.size,
+          sizeText:
+            formatBytes(blob.size)
+        });
+
+        show(
+          'Perekaman selesai. Audio cadangan siap diputar atau diunduh.',
+          'success'
+        );
+      } else {
+        setStatus(
+          '✓ Selesai tanpa audio',
+          'done'
+        );
+
+        setChip(
+          'audioChip',
+          'warn',
+          '💾 Audio tidak tersedia'
+        );
+
+        show(
+          'Perekaman selesai, tetapi audio cadangan tidak dapat dibentuk. Transkrip yang sudah terkirim tetap aman di Form Notulen.',
+          'error'
+        );
+      }
+
+      setChip(
+        'micChip',
+        '',
+        '🎤 Mikrofon selesai'
+      );
+
+      setChip(
+        'speechChip',
+        '',
+        '📝 Transkripsi selesai'
+      );
+
+      el('transcriptBadge').textContent =
+        'Selesai';
+
+      el('transcriptBadge').className =
+        'badge';
+
+      updateButtons();
+      notifyStatus('stopped');
+    }
+
+    function chooseAudioMimeType() {
+      const candidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4'
+      ];
+
+      if (
+        !window.MediaRecorder ||
+        typeof MediaRecorder.isTypeSupported !== 'function'
+      ) {
+        return '';
+      }
+
+      for (
+        let i = 0;
+        i < candidates.length;
+        i++
+      ) {
+        if (
+          MediaRecorder.isTypeSupported(
+            candidates[i]
+          )
+        ) {
+          return candidates[i];
         }
       }
 
-      if (interimText.trim()) {
-        el('interim').textContent = interimText.trim();
-      }
-    };
+      return '';
+    }
 
-    recognition.onerror = function (event) {
-      const code = String(event.error || 'unknown');
-
-      if (code === 'not-allowed' || code === 'service-not-allowed') {
-        state.shouldRestart = false;
-        state.listening = false;
-        stopMeter();
-        setStatus('Akses mikrofon ditolak', 'paused');
-        updateButtons();
-
-        const msg = 'Akses mikrofon ditolak pada halaman perekam. Klik ikon gembok pada halaman ini dan izinkan Microphone.';
-        showMessage(msg, 'error');
-        notifyOpener({ type: 'NOTULEN_RECORDER_ERROR', message: msg });
-        return;
-      }
-
-      if (code === 'no-speech') {
-        showMessage('Belum ada suara yang dikenali. Perekam tetap menunggu.', 'info');
-        return;
-      }
-
-      if (code === 'audio-capture') {
-        state.shouldRestart = false;
-        const msg = 'Mikrofon tidak ditemukan atau sedang digunakan aplikasi lain.';
-        showMessage(msg, 'error');
-        notifyOpener({ type: 'NOTULEN_RECORDER_ERROR', message: msg });
-        return;
-      }
-
-      showMessage('Speech Recognition: ' + code, 'error');
-    };
-
-    recognition.onend = function () {
-      state.listening = false;
+    function setupAudioMeter(stream) {
       stopMeter();
 
-      if (state.shouldRestart && !state.paused && !state.stopping) {
-        setTimeout(function () {
-          try {
-            recognition.start();
-          } catch (e) {
-            console.log(e);
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContext) {
+        return;
+      }
+
+      try {
+        const context =
+          new AudioContext();
+
+        const analyser =
+          context.createAnalyser();
+
+        analyser.fftSize = 256;
+
+        const source =
+          context.createMediaStreamSource(
+            stream
+          );
+
+        source.connect(analyser);
+
+        state.audioContext = context;
+        state.analyser = analyser;
+        state.meterSource = source;
+
+        const data =
+          new Uint8Array(
+            analyser.frequencyBinCount
+          );
+
+        function draw() {
+          if (
+            !state.analyser ||
+            !state.stream
+          ) {
+            return;
           }
-        }, 250);
+
+          analyser.getByteFrequencyData(data);
+
+          let total = 0;
+
+          for (
+            let i = 0;
+            i < data.length;
+            i++
+          ) {
+            total += data[i];
+          }
+
+          const avg =
+            data.length
+              ? total / data.length
+              : 0;
+
+          const percent =
+            Math.max(
+              2,
+              Math.min(
+                100,
+                avg * 1.35
+              )
+            );
+
+          el('meterBar').style.width =
+            (
+              state.paused
+                ? 0
+                : percent
+            ) + '%';
+
+          state.meterFrame =
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+      } catch (err) {}
+    }
+
+    function stopMeter() {
+      if (state.meterFrame) {
+        cancelAnimationFrame(
+          state.meterFrame
+        );
+
+        state.meterFrame = null;
+      }
+
+      el('meterBar').style.width = '0%';
+
+      if (state.audioContext) {
+        try {
+          state.audioContext.close();
+        } catch (err) {}
+
+        state.audioContext = null;
+      }
+
+      state.analyser = null;
+      state.meterSource = null;
+    }
+
+    function stopMediaTracks() {
+      if (state.stream) {
+        state.stream
+          .getTracks()
+          .forEach(
+            function(track) {
+              try {
+                track.stop();
+              } catch (err) {}
+            }
+          );
+
+        state.stream = null;
+      }
+    }
+
+    function startTimer() {
+      stopTimer();
+
+      state.timerId =
+        setInterval(
+          function() {
+            if (
+              state.sessionActive &&
+              !state.paused
+            ) {
+              state.elapsedSeconds += 1;
+
+              updateTimer();
+
+              if (
+                state.elapsedSeconds % 5 === 0
+              ) {
+                persistRecoveryMeta(
+                  state.paused
+                    ? 'paused'
+                    : 'recording'
+                );
+
+                updateSessionStatus(
+                  state.paused
+                    ? 'paused'
+                    : 'recording'
+                );
+
+                notifyHeartbeat();
+              }
+            }
+          },
+          1000
+        );
+    }
+
+    function stopTimer() {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+      }
+    }
+
+    function updateTimer() {
+      el('timer').textContent =
+        formatDuration(
+          state.elapsedSeconds
+        );
+    }
+
+    function notifyHeartbeat() {
+      notify({
+        type:'NOTULEN_RECORDER_HEARTBEAT',
+        sessionId:state.sessionId,
+        active:state.sessionActive,
+        paused:state.paused,
+        background:document.hidden,
+        duration:
+          formatDuration(
+            state.elapsedSeconds
+          ),
+        audioRecording:
+          Boolean(
+            state.mediaRecorder &&
+            (
+              state.mediaRecorder.state ===
+                'recording' ||
+              state.mediaRecorder.state ===
+                'paused'
+            )
+          ),
+        speechListening:
+          state.recognitionListening
+      });
+    }
+
+    function notifyStatus(status) {
+      notify({
+        type:'NOTULEN_RECORDER_STATUS',
+        status:status,
+        sessionId:state.sessionId,
+        duration:
+          formatDuration(
+            state.elapsedSeconds
+          )
+      });
+    }
+
+    async function requestWakeLock() {
+      if (
+        !('wakeLock' in navigator) ||
+        !state.sessionActive ||
+        state.paused ||
+        document.hidden
+      ) {
+        setChip(
+          'wakeChip',
+          'warn',
+          '☀️ Wake Lock tidak tersedia'
+        );
+
+        return;
+      }
+
+      try {
+        if (
+          state.wakeLock &&
+          !state.wakeLock.released
+        ) {
+          return;
+        }
+
+        state.wakeLock =
+          await navigator.wakeLock
+            .request('screen');
+
+        setChip(
+          'wakeChip',
+          'ok',
+          '☀️ Layar dijaga tetap aktif'
+        );
+
+        state.wakeLock.addEventListener(
+          'release',
+          function() {
+            setChip(
+              'wakeChip',
+              'warn',
+              '☀️ Wake Lock dilepas'
+            );
+          }
+        );
+
+      } catch (err) {
+        setChip(
+          'wakeChip',
+          'warn',
+          '☀️ Wake Lock tidak aktif'
+        );
+      }
+    }
+
+    function releaseWakeLock() {
+      if (state.wakeLock) {
+        try {
+          state.wakeLock.release();
+        } catch (err) {}
+
+        state.wakeLock = null;
+      }
+    }
+
+    function appendTranscript(text) {
+      const box = el('transcript');
+
+      const current =
+        box.value.trim();
+
+      box.value =
+        current
+          ? current + '\n' + text
+          : text;
+
+      box.scrollTop =
+        box.scrollHeight;
+    }
+
+    function normalizeSentence(text) {
+      let value =
+        String(text || '').trim();
+
+      if (!value) return '';
+
+      value =
+        value.charAt(0).toUpperCase() +
+        value.slice(1);
+
+      if (!/[.!?]$/.test(value)) {
+        value += '.';
+      }
+
+      return value;
+    }
+
+    function setAudioBlob(blob) {
+      clearAudioPreview();
+
+      state.audioBlob = blob;
+
+      state.audioUrl =
+        URL.createObjectURL(blob);
+
+      el('audioPreview').src =
+        state.audioUrl;
+
+      el('audioPreview').hidden =
+        false;
+
+      el('btnDownloadAudio').disabled =
+        false;
+    }
+
+    function clearAudioPreview() {
+      if (state.audioUrl) {
+        try {
+          URL.revokeObjectURL(
+            state.audioUrl
+          );
+        } catch (err) {}
+      }
+
+      state.audioUrl = '';
+      state.audioBlob = null;
+
+      el('audioPreview').removeAttribute('src');
+      el('audioPreview').hidden = true;
+      el('btnDownloadAudio').disabled = true;
+    }
+
+    function downloadAudio() {
+      if (!state.audioBlob || !state.audioUrl) {
+        show(
+          'Audio cadangan belum tersedia.',
+          'info'
+        );
+        return;
+      }
+
+      const ext =
+        getExtensionForMime(
+          state.audioBlob.type ||
+          state.mediaMime
+        );
+
+      const link =
+        document.createElement('a');
+
+      link.href = state.audioUrl;
+
+      link.download =
+        'Rekaman_Notulen_' +
+        safeFileName(meeting) +
+        '_' +
+        new Date()
+          .toISOString()
+          .replace(/[:.]/g, '-')
+          .slice(0, 19) +
+        '.' +
+        ext;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      show(
+        'Audio cadangan diunduh ke perangkat.',
+        'success'
+      );
+    }
+
+    async function clearCurrentBackup() {
+      if (state.sessionActive) {
+        show(
+          'Selesaikan perekaman sebelum menghapus cadangan.',
+          'error'
+        );
+        return;
+      }
+
+      if (state.sessionId) {
+        await deleteSessionData(
+          state.sessionId
+        );
+      }
+
+      clearRecoveryMeta();
+      state.recoveryMeta = null;
+      state.audioChunks = [];
+      state.sessionId = '';
+
+      clearAudioPreview();
+
+      el('btnClearBackup').disabled =
+        true;
+
+      el('audioBadge').textContent =
+        'Belum ada';
+
+      el('audioBadge').className =
+        'badge';
+
+      setChip(
+        'backupChip',
+        '',
+        '🛡️ Cadangan lokal kosong'
+      );
+
+      show(
+        'Cadangan lokal sesi ini telah dihapus.',
+        'success'
+      );
+    }
+
+    function updateButtons() {
+      if (!state.sessionActive) {
+        el('btnStart').disabled = false;
+        el('btnStart').textContent =
+          '🔴 Mulai Mencatat';
+
+        el('btnPause').disabled = true;
+        el('btnStop').disabled = true;
         return;
       }
 
       if (state.paused) {
-        setStatus('⏸ Dijeda', 'paused');
-        notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'paused' });
-      } else if (state.stopping) {
-        setStatus('✓ Selesai', 'done');
-        notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'stopped' });
+        el('btnStart').disabled = false;
+        el('btnStart').textContent =
+          '▶ Lanjutkan Mencatat';
+
+        el('btnPause').disabled = true;
+        el('btnStop').disabled = false;
+        return;
+      }
+
+      el('btnStart').disabled = true;
+      el('btnStart').textContent =
+        '🔴 Sedang Mencatat';
+
+      el('btnPause').disabled = false;
+      el('btnStop').disabled = false;
+    }
+
+    function updateCapabilityChips() {
+      if (state.speechSupported) {
+        setChip(
+          'speechChip',
+          '',
+          '📝 Speech Recognition siap'
+        );
       } else {
-        setStatus('Belum aktif', '');
+        setChip(
+          'speechChip',
+          'warn',
+          '📝 Speech Recognition tidak didukung'
+        );
       }
 
-      updateButtons();
-    };
-
-    state.recognition = recognition;
-  }
-
-  function startRecognition() {
-    if (!state.supported || !state.recognition || state.listening) return;
-
-    state.paused = false;
-    state.stopping = false;
-    state.shouldRestart = true;
-
-    try {
-      state.recognition.start();
-      showMessage('Memulai mikrofon…', 'info');
-    } catch (e) {
-      showMessage('Perekam belum dapat dimulai. Coba tekan lagi.', 'error');
-    }
-  }
-
-  function pauseRecognition() {
-    if (!state.recognition) return;
-
-    state.paused = true;
-    state.stopping = false;
-    state.shouldRestart = false;
-
-    try {
-      state.recognition.stop();
-    } catch (e) {}
-
-    setStatus('⏸ Dijeda', 'paused');
-    updateButtons();
-    notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'paused' });
-  }
-
-  function stopRecognition() {
-    if (!state.recognition) return;
-
-    state.paused = false;
-    state.stopping = true;
-    state.shouldRestart = false;
-
-    try {
-      state.recognition.stop();
-    } catch (e) {}
-
-    setStatus('✓ Selesai', 'done');
-    updateButtons();
-    notifyOpener({ type: 'NOTULEN_RECORDER_STATUS', status: 'stopped' });
-    showMessage('Perekaman selesai. Transkrip yang sudah final telah dikirim ke Notulen.', 'success');
-  }
-
-  function closeRecorder() {
-    if (state.listening) {
-      stopRecognition();
-    }
-
-    notifyOpener({ type: 'NOTULEN_RECORDER_CLOSED' });
-
-    setTimeout(function () {
-      window.close();
-
-      if (!window.closed) {
-        showMessage('Silakan tutup tab/jendela ini secara manual.', 'info');
+      if (
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getUserMedia &&
+        window.MediaRecorder
+      ) {
+        setChip(
+          'audioChip',
+          '',
+          '💾 Audio recorder siap'
+        );
+      } else {
+        setChip(
+          'audioChip',
+          'warn',
+          '💾 MediaRecorder tidak didukung'
+        );
       }
-    }, 150);
-  }
 
-  function appendTranscript(text) {
-    const box = el('transcript');
-    const current = box.value.trim();
-    box.value = current ? current + '\n' + text : text;
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function normalizeSentence(text) {
-    let s = String(text || '').trim();
-    if (!s) return '';
-    s = s.charAt(0).toUpperCase() + s.slice(1);
-    if (!/[.!?]$/.test(s)) s += '.';
-    return s;
-  }
-
-  function notifyOpener(payload) {
-    try {
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(payload, '*');
+      if ('wakeLock' in navigator) {
+        setChip(
+          'wakeChip',
+          '',
+          '☀️ Wake Lock tersedia'
+        );
+      } else {
+        setChip(
+          'wakeChip',
+          'warn',
+          '☀️ Wake Lock tidak didukung'
+        );
       }
-    } catch (e) {
-      console.log('Tidak dapat mengirim pesan ke aplikasi Notulen:', e);
     }
-  }
 
-  function setStatus(text, mode) {
-    const status = el('status');
-    status.textContent = text;
-    status.className = 'status';
-    if (mode) status.classList.add(mode);
-  }
+    function setChip(id, mode, text) {
+      const node = el(id);
 
-  function updateButtons() {
-    el('btnStart').disabled = !state.supported || state.listening;
-    el('btnPause').disabled = !state.listening;
-    el('btnStop').disabled = !state.listening && !state.paused;
-  }
+      node.textContent = text;
+      node.className =
+        'protection-chip';
 
-  function showMessage(text, type) {
-    const box = el('message');
-    box.textContent = text || '';
-    if (type === 'error') box.style.color = '#b91c1c';
-    else if (type === 'success') box.style.color = '#166534';
-    else box.style.color = '#475569';
-  }
-
-  function startMeter() {
-    stopMeter();
-    state.meterValue = 12;
-    state.meterDirection = 1;
-
-    state.meterTimer = setInterval(function () {
-      state.meterValue += state.meterDirection * (4 + Math.random() * 12);
-      if (state.meterValue >= 90) state.meterDirection = -1;
-      if (state.meterValue <= 10) state.meterDirection = 1;
-      el('meterBar').style.width = Math.max(5, Math.min(95, state.meterValue)) + '%';
-    }, 180);
-  }
-
-  function stopMeter() {
-    if (state.meterTimer) {
-      clearInterval(state.meterTimer);
-      state.meterTimer = null;
+      if (mode) {
+        node.classList.add(mode);
+      }
     }
-    el('meterBar').style.width = '0%';
-  }
 
-  init();
-})();
-</script>
+    function setStatus(text, mode) {
+      const node = el('status');
+
+      node.textContent = text;
+      node.className = '';
+
+      if (mode) {
+        node.classList.add(mode);
+      }
+    }
+
+    function show(text, type) {
+      const node = el('message');
+
+      node.textContent =
+        text || '';
+
+      if (type === 'error') {
+        node.style.color = '#b91c1c';
+      } else if (type === 'success') {
+        node.style.color = '#166534';
+      } else {
+        node.style.color = '#475569';
+      }
+    }
+
+    function notify(payload) {
+      try {
+        if (
+          window.opener &&
+          !window.opener.closed
+        ) {
+          window.opener.postMessage(
+            payload,
+            parentOrigin
+          );
+        }
+      } catch (err) {}
+    }
+
+    function persistTranscript() {
+      if (!state.sessionId) return;
+
+      updateSessionTranscript(
+        state.sessionId,
+        el('transcript').value.trim()
+      );
+
+      persistRecoveryMeta(
+        state.paused
+          ? 'paused'
+          : (
+              state.sessionActive
+                ? 'recording'
+                : 'stopped'
+            )
+      );
+    }
+
+    function persistRecoveryMeta(status) {
+      if (!state.sessionId) return;
+
+      const meta = {
+        version:'3.0.2',
+        sessionId:state.sessionId,
+        meeting:meeting,
+        language:language,
+        status:status,
+        duration:state.elapsedSeconds,
+        transcript:
+          el('transcript').value.trim(),
+        mimeType:
+          state.mediaMime || '',
+        savedAt:
+          new Date().toISOString()
+      };
+
+      try {
+        localStorage.setItem(
+          RECOVERY_KEY,
+          JSON.stringify(meta)
+        );
+
+        state.recoveryMeta = meta;
+      } catch (err) {}
+    }
+
+    function clearRecoveryMeta() {
+      try {
+        localStorage.removeItem(
+          RECOVERY_KEY
+        );
+      } catch (err) {}
+    }
+
+    function checkRecovery() {
+      let meta = null;
+
+      try {
+        const raw =
+          localStorage.getItem(
+            RECOVERY_KEY
+          );
+
+        if (raw) {
+          meta = JSON.parse(raw);
+        }
+      } catch (err) {}
+
+      if (
+        !meta ||
+        !meta.sessionId
+      ) {
+        state.recoveryMeta = null;
+
+        el('recoveryCard').hidden = true;
+        return;
+      }
+
+      state.recoveryMeta = meta;
+
+      el('recoveryCard').hidden = false;
+
+      el('recoveryText').textContent =
+        (
+          meta.meeting ||
+          'Sesi sebelumnya'
+        ) +
+        ' • ' +
+        formatDuration(
+          Number(meta.duration || 0)
+        ) +
+        ' • status ' +
+        String(
+          meta.status || '-'
+        ) +
+        '.';
+
+      el('btnClearBackup').disabled =
+        false;
+    }
+
+    async function recoverPreviousSession() {
+      const meta =
+        state.recoveryMeta;
+
+      if (!meta || !meta.sessionId) {
+        return;
+      }
+
+      setStatus(
+        'Memulihkan cadangan…',
+        'recovering'
+      );
+
+      try {
+        const stored =
+          await getSessionMeta(
+            meta.sessionId
+          );
+
+        const transcript =
+          (
+            stored &&
+            stored.transcript
+          ) ||
+          meta.transcript ||
+          '';
+
+        if (transcript) {
+          el('transcript').value =
+            transcript;
+        }
+
+        const blob =
+          await buildBlobFromStoredChunks(
+            meta.sessionId
+          );
+
+        if (blob && blob.size) {
+          state.sessionId =
+            meta.sessionId;
+
+          state.mediaMime =
+            blob.type ||
+            meta.mimeType ||
+            'audio/webm';
+
+          state.elapsedSeconds =
+            Number(
+              (
+                stored &&
+                stored.duration
+              ) ||
+              meta.duration ||
+              0
+            );
+
+          updateTimer();
+          setAudioBlob(blob);
+
+          el('audioBadge').textContent =
+            'Pulih • ' +
+            formatBytes(blob.size);
+
+          el('audioBadge').className =
+            'badge active';
+
+          setChip(
+            'audioChip',
+            'ok',
+            '💾 Audio cadangan dipulihkan'
+          );
+
+          setChip(
+            'backupChip',
+            'ok',
+            '🛡️ Cadangan lokal dipulihkan'
+          );
+
+          el('btnClearBackup').disabled =
+            false;
+
+          show(
+            'Cadangan audio/transkrip berhasil dipulihkan. Anda dapat mengunduh audio.',
+            'success'
+          );
+        } else if (transcript) {
+          show(
+            'Transkrip cadangan berhasil dipulihkan, tetapi potongan audio tidak ditemukan.',
+            'info'
+          );
+        } else {
+          show(
+            'Cadangan tidak memiliki audio/transkrip yang dapat dipulihkan.',
+            'error'
+          );
+        }
+
+        el('recoveryCard').hidden =
+          true;
+
+        setStatus(
+          'Cadangan dipulihkan',
+          'done'
+        );
+
+      } catch (err) {
+        setStatus(
+          'Pemulihan gagal',
+          'paused'
+        );
+
+        show(
+          'Gagal memulihkan cadangan lokal: ' +
+          (
+            err && err.message
+              ? err.message
+              : err
+          ),
+          'error'
+        );
+      }
+    }
+
+    async function discardRecovery() {
+      const meta =
+        state.recoveryMeta;
+
+      if (
+        meta &&
+        meta.sessionId
+      ) {
+        await deleteSessionData(
+          meta.sessionId
+        );
+      }
+
+      clearRecoveryMeta();
+      state.recoveryMeta = null;
+
+      el('recoveryCard').hidden = true;
+
+      show(
+        'Cadangan sesi sebelumnya dihapus.',
+        'success'
+      );
+    }
+
+    function openDb() {
+      return new Promise(
+        function(resolve, reject) {
+          if (!window.indexedDB) {
+            reject(
+              new Error(
+                'IndexedDB tidak tersedia.'
+              )
+            );
+            return;
+          }
+
+          const request =
+            indexedDB.open(
+              DB_NAME,
+              DB_VERSION
+            );
+
+          request.onupgradeneeded =
+            function(event) {
+              const db =
+                event.target.result;
+
+              if (
+                !db.objectStoreNames
+                  .contains(CHUNK_STORE)
+              ) {
+                const chunkStore =
+                  db.createObjectStore(
+                    CHUNK_STORE,
+                    {
+                      keyPath:'id'
+                    }
+                  );
+
+                chunkStore.createIndex(
+                  'sessionId',
+                  'sessionId',
+                  {
+                    unique:false
+                  }
+                );
+              }
+
+              if (
+                !db.objectStoreNames
+                  .contains(SESSION_STORE)
+              ) {
+                db.createObjectStore(
+                  SESSION_STORE,
+                  {
+                    keyPath:'sessionId'
+                  }
+                );
+              }
+            };
+
+          request.onsuccess =
+            function() {
+              resolve(request.result);
+            };
+
+          request.onerror =
+            function() {
+              reject(
+                request.error ||
+                new Error(
+                  'Gagal membuka IndexedDB.'
+                )
+              );
+            };
+        }
+      );
+    }
+
+    async function saveChunk(
+      sessionId,
+      index,
+      blob,
+      mimeType
+    ) {
+      const db = await openDb();
+
+      return new Promise(
+        function(resolve, reject) {
+          const tx =
+            db.transaction(
+              CHUNK_STORE,
+              'readwrite'
+            );
+
+          tx.objectStore(CHUNK_STORE)
+            .put({
+              id:
+                sessionId +
+                ':' +
+                String(index)
+                  .padStart(8, '0'),
+              sessionId:sessionId,
+              index:index,
+              blob:blob,
+              mimeType:mimeType,
+              createdAt:Date.now()
+            });
+
+          tx.oncomplete =
+            function() {
+              db.close();
+              resolve();
+            };
+
+          tx.onerror =
+            function() {
+              const error =
+                tx.error ||
+                new Error(
+                  'Gagal menyimpan chunk.'
+                );
+
+              db.close();
+              reject(error);
+            };
+        }
+      );
+    }
+
+    async function saveSessionMeta(meta) {
+      try {
+        const db = await openDb();
+
+        return await new Promise(
+          function(resolve, reject) {
+            const tx =
+              db.transaction(
+                SESSION_STORE,
+                'readwrite'
+              );
+
+            tx.objectStore(
+              SESSION_STORE
+            ).put(meta);
+
+            tx.oncomplete =
+              function() {
+                db.close();
+                resolve();
+              };
+
+            tx.onerror =
+              function() {
+                const error =
+                  tx.error ||
+                  new Error(
+                    'Gagal menyimpan session.'
+                  );
+
+                db.close();
+                reject(error);
+              };
+          }
+        );
+      } catch (err) {
+        state.persistentBackup = false;
+        throw err;
+      }
+    }
+
+    async function getSessionMeta(
+      sessionId
+    ) {
+      const db = await openDb();
+
+      return new Promise(
+        function(resolve, reject) {
+          const tx =
+            db.transaction(
+              SESSION_STORE,
+              'readonly'
+            );
+
+          const request =
+            tx.objectStore(
+              SESSION_STORE
+            ).get(sessionId);
+
+          request.onsuccess =
+            function() {
+              const result =
+                request.result || null;
+
+              db.close();
+              resolve(result);
+            };
+
+          request.onerror =
+            function() {
+              const error =
+                request.error ||
+                new Error(
+                  'Gagal membaca session.'
+                );
+
+              db.close();
+              reject(error);
+            };
+        }
+      );
+    }
+
+    async function updateSessionStatus(status) {
+      if (!state.sessionId) return;
+
+      try {
+        const current =
+          await getSessionMeta(
+            state.sessionId
+          );
+
+        if (!current) return;
+
+        current.status = status;
+        current.duration =
+          state.elapsedSeconds;
+
+        current.transcript =
+          el('transcript')
+            .value
+            .trim();
+
+        await saveSessionMeta(current);
+      } catch (err) {}
+    }
+
+    async function updateSessionTranscript(
+      sessionId,
+      transcript
+    ) {
+      try {
+        const current =
+          await getSessionMeta(
+            sessionId
+          );
+
+        if (!current) return;
+
+        current.transcript =
+          transcript;
+
+        current.duration =
+          state.elapsedSeconds;
+
+        await saveSessionMeta(current);
+      } catch (err) {}
+    }
+
+    async function getStoredChunks(
+      sessionId
+    ) {
+      const db = await openDb();
+
+      return new Promise(
+        function(resolve, reject) {
+          const tx =
+            db.transaction(
+              CHUNK_STORE,
+              'readonly'
+            );
+
+          const store =
+            tx.objectStore(
+              CHUNK_STORE
+            );
+
+          const index =
+            store.index(
+              'sessionId'
+            );
+
+          const request =
+            index.getAll(sessionId);
+
+          request.onsuccess =
+            function() {
+              const rows =
+                (request.result || [])
+                  .sort(
+                    function(a, b) {
+                      return (
+                        Number(a.index || 0) -
+                        Number(b.index || 0)
+                      );
+                    }
+                  );
+
+              db.close();
+              resolve(rows);
+            };
+
+          request.onerror =
+            function() {
+              const error =
+                request.error ||
+                new Error(
+                  'Gagal membaca chunk.'
+                );
+
+              db.close();
+              reject(error);
+            };
+        }
+      );
+    }
+
+    async function buildBlobFromStoredChunks(
+      sessionId
+    ) {
+      const rows =
+        await getStoredChunks(
+          sessionId
+        );
+
+      if (!rows.length) {
+        return null;
+      }
+
+      const mime =
+        rows[0].mimeType ||
+        (
+          rows[0].blob &&
+          rows[0].blob.type
+        ) ||
+        'audio/webm';
+
+      return new Blob(
+        rows.map(
+          function(row) {
+            return row.blob;
+          }
+        ),
+        {
+          type:mime
+        }
+      );
+    }
+
+    async function deleteSessionData(
+      sessionId
+    ) {
+      try {
+        const db = await openDb();
+
+        await new Promise(
+          function(resolve, reject) {
+            const tx =
+              db.transaction(
+                [
+                  CHUNK_STORE,
+                  SESSION_STORE
+                ],
+                'readwrite'
+              );
+
+            const chunkStore =
+              tx.objectStore(
+                CHUNK_STORE
+              );
+
+            const index =
+              chunkStore.index(
+                'sessionId'
+              );
+
+            const cursorRequest =
+              index.openCursor(
+                IDBKeyRange.only(
+                  sessionId
+                )
+              );
+
+            cursorRequest.onsuccess =
+              function(event) {
+                const cursor =
+                  event.target.result;
+
+                if (cursor) {
+                  cursor.delete();
+                  cursor.continue();
+                }
+              };
+
+            tx.objectStore(
+              SESSION_STORE
+            ).delete(sessionId);
+
+            tx.oncomplete =
+              function() {
+                db.close();
+                resolve();
+              };
+
+            tx.onerror =
+              function() {
+                const error =
+                  tx.error ||
+                  new Error(
+                    'Gagal menghapus cadangan.'
+                  );
+
+                db.close();
+                reject(error);
+              };
+          }
+        );
+      } catch (err) {}
+    }
+
+    function formatDuration(seconds) {
+      const total =
+        Math.max(
+          0,
+          Math.floor(
+            Number(seconds || 0)
+          )
+        );
+
+      const h =
+        Math.floor(total / 3600);
+
+      const m =
+        Math.floor(
+          (total % 3600) / 60
+        );
+
+      const s =
+        total % 60;
+
+      return [
+        String(h).padStart(2, '0'),
+        String(m).padStart(2, '0'),
+        String(s).padStart(2, '0')
+      ].join(':');
+    }
+
+    function formatBytes(bytes) {
+      const value =
+        Number(bytes || 0);
+
+      if (value < 1024) {
+        return value + ' B';
+      }
+
+      if (value < 1024 * 1024) {
+        return (
+          value / 1024
+        ).toFixed(1) + ' KB';
+      }
+
+      return (
+        value /
+        (1024 * 1024)
+      ).toFixed(1) + ' MB';
+    }
+
+    function safeFileName(value) {
+      return String(value || 'Rapat')
+        .trim()
+        .replace(
+          /[\\/:*?"<>|]+/g,
+          '-'
+        )
+        .replace(/\s+/g, '_')
+        .slice(0, 80) ||
+        'Rapat';
+    }
+
+    function getExtensionForMime(mime) {
+      const value =
+        String(mime || '')
+          .toLowerCase();
+
+      if (
+        value.includes('ogg')
+      ) {
+        return 'ogg';
+      }
+
+      if (
+        value.includes('mp4')
+      ) {
+        return 'm4a';
+      }
+
+      return 'webm';
+    }
+
+    init();
+  })();
+  </script>
 </body>
 </html>
