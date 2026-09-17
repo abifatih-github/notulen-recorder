@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.3</title>
+  <title>Perekam Notulen Rapat v3.0.2.4</title>
 
   <style>
     :root {
@@ -562,12 +562,47 @@
         width:100%;
       }
     }
+  
+    /* =========================================================
+       v3.0.2.4 — MOBILE RECORDER UX REDESIGN
+       ========================================================= */
+    .mobile-settings-toggle,.mobile-bottom-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
+    @media (max-width:640px){
+      :root{--mobile-nav-height:72px}
+      html,body{width:100%;min-width:0;max-width:100vw;overflow-x:hidden}
+      html{scroll-behavior:smooth}
+      body{padding:8px 8px calc(var(--mobile-nav-height) + 20px + env(safe-area-inset-bottom));background:radial-gradient(circle at 8% 0%,rgba(20,184,166,.10),transparent 24%),#f5f8fa}
+      .app{width:100%;max-width:none}
+      .top-card,.card,.recovery{border-radius:16px;box-shadow:0 5px 18px rgba(15,23,42,.05)}
+      .top-card{padding:12px}.brand-row{align-items:center;gap:8px}.brand{gap:8px}.brand-icon{width:38px;height:38px;flex-basis:38px;border-radius:11px;font-size:18px}.brand h1{font-size:15px;line-height:1.15}.brand p{max-width:235px;margin-top:2px;overflow:hidden;font-size:7.5px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.version{padding:5px 7px;font-size:7px}
+      .meeting-card{margin-top:10px;padding:9px 11px;border-radius:12px}.meeting-card span{font-size:7px}.meeting-card strong{margin-top:3px;font-size:14px}
+      .audio-setup-card{margin-top:10px;padding:8px 10px;border-radius:13px}.mobile-settings-toggle{width:100%;min-height:35px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 2px;border:0;background:transparent;color:#334155;font-size:9px;font-weight:900;text-align:left}
+      .audio-setup-card.mobile-collapsed .audio-setup-grid,.audio-setup-card.mobile-collapsed .audio-setup-help,.audio-setup-card.mobile-collapsed .source-mode-warning{display:none!important}
+      .audio-setup-grid{grid-template-columns:1fr;gap:7px;margin-top:8px}.setup-field label{margin-bottom:4px;font-size:6.7px}.setup-field select{min-height:41px;padding:8px 9px;font-size:9px}.audio-setup-help,.source-mode-warning{font-size:7.4px}
+      .status-grid{grid-template-columns:1.2fr 1fr 1fr;gap:6px;margin-top:10px}.status-grid .status-box:first-child{grid-column:auto}.status-box{min-height:62px;padding:9px 8px;border-radius:12px}.status-box span{font-size:6.3px}.status-box strong{margin-top:5px;font-size:9px}#timer{font-size:14px}
+      .protection-row{gap:5px;margin-top:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.protection-row::-webkit-scrollbar{display:none}.protection-chip{flex:0 0 auto;padding:5px 7px;font-size:6.5px}.meter{height:7px;margin-top:8px}
+      .controls{grid-template-columns:1.2fr .9fr .9fr;gap:6px;margin-top:10px}.controls .btn{width:100%;min-height:46px;padding:8px 6px;border-radius:12px;font-size:9px}#btnStart{box-shadow:0 7px 18px rgba(15,118,110,.17)}
+      .message{min-height:0;margin-top:7px;font-size:7.5px}.warning-banner{margin-top:8px;max-height:48px;overflow:hidden;padding:8px 9px;border-radius:10px;font-size:6.8px;line-height:1.45}.background-alert{margin-top:8px;padding:8px 9px;font-size:7px}
+      .recovery{margin-top:9px;padding:10px}.recovery h3{font-size:9px}.recovery p{font-size:7px}.recovery-actions{display:grid;grid-template-columns:1fr 1fr}.recovery-actions .btn{min-height:39px;padding:7px;font-size:8px}
+      .card{margin-top:9px;padding:11px}.card-head{margin-bottom:8px}.card-head h2{font-size:11px}.card-head p{font-size:7px}.badge{font-size:6.5px}.interim{min-height:38px;padding:8px;font-size:8px}textarea{min-height:210px;padding:9px;font-size:9px}
+      .audio-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}.audio-actions .btn{width:100%;min-height:40px;padding:7px 6px;font-size:7.7px}.foot-note{margin-bottom:8px;font-size:6.5px}
+      .mobile-bottom-nav{position:fixed;z-index:5000;left:8px;right:8px;bottom:max(7px,env(safe-area-inset-bottom));height:var(--mobile-nav-height);display:grid;grid-template-columns:1fr 1fr 1.18fr 1fr 1fr;align-items:end;gap:2px;padding:7px 7px 6px;border:1px solid rgba(203,213,225,.9);border-radius:22px;background:rgba(255,255,255,.96);box-shadow:0 16px 42px rgba(15,23,42,.20);backdrop-filter:blur(18px)}
+      .mobile-nav-item,.mobile-record-action{min-width:0;border:0;background:transparent;-webkit-tap-highlight-color:transparent}.mobile-nav-item{height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 2px;border-radius:13px;color:#64748b;font-size:7px;font-weight:800}.mobile-nav-item.active{color:#0f766e;background:#f0fdfa}.mobile-nav-icon{font-size:17px;line-height:1}
+      .mobile-record-action{position:relative;height:65px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px;padding:0 2px 5px;color:#0f766e;font-size:7px;font-weight:900}.mobile-record-icon{position:absolute;top:-28px;left:50%;width:58px;height:58px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);border:5px solid rgba(255,255,255,.98);border-radius:50%;background:linear-gradient(145deg,#10b981,#0f766e);color:#fff;font-size:25px;box-shadow:0 0 0 3px rgba(45,212,191,.18),0 8px 20px rgba(15,118,110,.28)}
+      .mobile-record-action.recording .mobile-record-icon{background:linear-gradient(145deg,#ef4444,#be123c);animation:mobileRecordPulse 1.6s infinite}.mobile-record-action.paused .mobile-record-icon{background:linear-gradient(145deg,#f59e0b,#d97706)}.mobile-record-action.done .mobile-record-icon{background:linear-gradient(145deg,#22c55e,#15803d)}
+      @keyframes mobileRecordPulse{0%,100%{box-shadow:0 0 0 3px rgba(254,202,202,.24),0 8px 20px rgba(190,18,60,.24)}50%{box-shadow:0 0 0 9px rgba(254,202,202,.08),0 8px 20px rgba(190,18,60,.30)}}
+      .mobile-more-backdrop{position:fixed;z-index:5100;inset:0;display:block;background:rgba(15,23,42,.38);backdrop-filter:blur(2px)}.mobile-more-backdrop[hidden]{display:none!important}.mobile-more-sheet{position:fixed;z-index:5200;left:8px;right:8px;bottom:calc(var(--mobile-nav-height) + 14px + env(safe-area-inset-bottom));display:block;max-height:min(68dvh,520px);overflow:auto;padding:8px 12px 13px;border:1px solid #dbe5ea;border-radius:22px;background:#fff;box-shadow:0 20px 48px rgba(15,23,42,.25);transform:translateY(calc(100% + 110px));opacity:0;pointer-events:none;transition:transform .22s ease,opacity .18s ease}.mobile-more-sheet.open{transform:translateY(0);opacity:1;pointer-events:auto}
+      .mobile-sheet-handle{width:42px;height:4px;margin:1px auto 10px;border-radius:999px;background:#cbd5e1}.mobile-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:3px 2px 10px}.mobile-sheet-head strong{display:block;color:#17332f;font-size:13px}.mobile-sheet-head span{display:block;margin-top:2px;color:#64748b;font-size:7px}.mobile-sheet-close{width:32px;height:32px;border:0;border-radius:10px;background:#f1f5f9;color:#475569;font-size:19px}.mobile-sheet-actions{display:grid;gap:7px}
+      .mobile-sheet-action{width:100%;min-height:58px;display:grid;grid-template-columns:36px minmax(0,1fr) 16px;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e2e8f0;border-radius:13px;background:#fff;color:#334155;text-align:left}.mobile-sheet-action>span{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#f0fdfa;font-size:16px}.mobile-sheet-action strong{display:block;font-size:9px}.mobile-sheet-action small{display:block;margin-top:2px;color:#64748b;font-size:6.8px;line-height:1.35}.mobile-sheet-action b{color:#94a3b8;font-size:17px}.mobile-sheet-action.danger{border-color:#fecdd3;background:#fffafb}.mobile-sheet-action.danger>span{background:#fff1f2}body.mobile-more-open{overflow:hidden}
+    }
+    @media (max-width:360px){body{padding-left:6px;padding-right:6px}.top-card,.card,.recovery{border-radius:14px}.brand p{max-width:190px}.status-grid{grid-template-columns:1fr 1fr}.status-grid .status-box:first-child{grid-column:1/-1}.controls{grid-template-columns:1fr 1fr}#btnStart{grid-column:1/-1}.audio-actions{grid-template-columns:1fr}.mobile-bottom-nav{left:5px;right:5px}}
+
   </style>
 </head>
 
 <body>
   <main class="app">
-    <section class="top-card">
+    <section id="recorderSummary" class="top-card">
       <div class="brand-row">
         <div class="brand">
           <div class="brand-icon">🎙️</div>
@@ -577,7 +612,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.3</div>
+        <div class="version">v3.0.2.4</div>
       </div>
 
       <div class="meeting-card">
@@ -586,7 +621,11 @@
       </div>
 
 
-      <div class="audio-setup-card">
+      <div id="audioSetupCard" class="audio-setup-card">
+        <button type="button" id="btnMobileSettings" class="mobile-settings-toggle" aria-expanded="false">
+          <span>⚙️ Pengaturan Audio</span>
+          <span id="mobileSettingsChevron">⌄</span>
+        </button>
         <div class="audio-setup-grid">
           <div class="setup-field">
             <label for="audioSourceMode">Sumber Audio</label>
@@ -655,7 +694,7 @@
         <div id="meterBar"></div>
       </div>
 
-      <div class="controls">
+      <div id="recordControls" class="controls">
         <button type="button" id="btnStart" class="btn btn-primary">
           🔴 Mulai Mencatat
         </button>
@@ -671,7 +710,7 @@
 
       <div id="message" class="message"></div>
 
-      <div class="warning-banner">
+      <div id="protectionInfo" class="warning-banner">
         <strong>⚠️ Penting:</strong>
         jangan menutup halaman atau membuat perangkat sleep selama rapat.
         Di desktop, audio biasanya tetap berjalan saat minimize, tetapi browser/OS tetap dapat
@@ -685,7 +724,7 @@
       </div>
     </section>
 
-    <section id="recoveryCard" class="recovery" hidden>
+    <section id="recoveryCard" class="recovery mobile-more-target" hidden>
       <h3>🛟 Cadangan sesi sebelumnya ditemukan</h3>
       <p id="recoveryText">
         Potongan audio/transkrip lokal tersedia di browser ini.
@@ -702,7 +741,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section id="transcriptCard" class="card">
       <div class="card-head">
         <div>
           <h2>📝 Transkripsi Live</h2>
@@ -723,7 +762,7 @@
       ></textarea>
     </section>
 
-    <section class="card">
+    <section id="audioCard" class="card">
       <div class="card-head">
         <div>
           <h2>💾 Audio Cadangan Lokal</h2>
@@ -760,10 +799,30 @@
     </section>
 
     <div class="foot-note">
-      Audio cadangan v3.0.2.3 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.4 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
+
+
+  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navigasi Perekam">
+    <button type="button" class="mobile-nav-item active" data-mobile-nav="summary" aria-label="Ringkas"><span class="mobile-nav-icon">⌂</span><span>Ringkas</span></button>
+    <button type="button" class="mobile-nav-item" data-mobile-nav="transcript" aria-label="Transkrip"><span class="mobile-nav-icon">▤</span><span>Transkrip</span></button>
+    <button type="button" id="mobileRecordAction" class="mobile-record-action" aria-label="Mulai merekam"><span id="mobileRecordIcon" class="mobile-record-icon">🎙️</span><span id="mobileRecordLabel">Rekam</span></button>
+    <button type="button" class="mobile-nav-item" data-mobile-nav="audio" aria-label="Audio"><span class="mobile-nav-icon">♫</span><span>Audio</span></button>
+    <button type="button" class="mobile-nav-item" data-mobile-nav="more" aria-label="Lainnya"><span class="mobile-nav-icon">▦</span><span>Lainnya</span></button>
+  </nav>
+  <div id="mobileMoreBackdrop" class="mobile-more-backdrop" hidden></div>
+  <aside id="mobileMoreSheet" class="mobile-more-sheet" aria-hidden="true">
+    <div class="mobile-sheet-handle"></div>
+    <div class="mobile-sheet-head"><div><strong>Lainnya</strong><span>Pengaturan & pemulihan perekam</span></div><button type="button" id="btnCloseMobileMore" class="mobile-sheet-close" aria-label="Tutup">×</button></div>
+    <div class="mobile-sheet-actions">
+      <button type="button" id="btnMoreAudioSettings" class="mobile-sheet-action"><span>⚙️</span><div><strong>Pengaturan Audio</strong><small>Sumber audio, mikrofon, kualitas suara</small></div><b>›</b></button>
+      <button type="button" id="btnMoreRecovery" class="mobile-sheet-action"><span>↻</span><div><strong>Pemulihan Sesi</strong><small>Buka cadangan sesi sebelumnya bila tersedia</small></div><b>›</b></button>
+      <button type="button" id="btnMoreProtection" class="mobile-sheet-action"><span>🛡️</span><div><strong>Proteksi Perekam</strong><small>Background, Wake Lock, dan backup lokal</small></div><b>›</b></button>
+      <button type="button" id="btnMoreCloseRecorder" class="mobile-sheet-action danger"><span>✕</span><div><strong>Tutup Perekam</strong><small>Kembali ke Form Notulen</small></div><b>›</b></button>
+    </div>
+  </aside>
 
   <script>
   (function(){
@@ -843,7 +902,9 @@
       wakeLock:null,
       persistentBackup:true,
       recoveryMeta:null,
-      backgrounded:false
+      backgrounded:false,
+      mobileSettingsExpanded:false,
+      mobileMoreOpen:false
     };
 
     function init() {
@@ -890,10 +951,11 @@
       enumerateMicrophones();
       updateAudioSourceHelp();
       checkRecovery();
+      initMobileRecorderUI();
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.3',
+        version:'3.0.2.4',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -905,6 +967,88 @@
           Boolean(state.recoveryMeta)
       });
     }
+
+    function isMobileRecorder_() {
+      return Boolean(window.matchMedia && window.matchMedia('(max-width:640px)').matches);
+    }
+
+    function initMobileRecorderUI() {
+      el('btnMobileSettings').addEventListener('click', function() { setMobileSettingsExpanded_(!state.mobileSettingsExpanded); });
+      document.querySelectorAll('[data-mobile-nav]').forEach(function(button) {
+        button.addEventListener('click', function() { handleMobileNav_(button.getAttribute('data-mobile-nav')); });
+      });
+      el('mobileRecordAction').addEventListener('click', handleMobileRecordAction_);
+      el('mobileMoreBackdrop').addEventListener('click', closeMobileMore_);
+      el('btnCloseMobileMore').addEventListener('click', closeMobileMore_);
+      el('btnMoreAudioSettings').addEventListener('click', function() { closeMobileMore_(); setMobileSettingsExpanded_(true); scrollToMobileTarget_('audioSetupCard','summary'); });
+      el('btnMoreRecovery').addEventListener('click', function() {
+        closeMobileMore_();
+        if (!el('recoveryCard').hidden) scrollToMobileTarget_('recoveryCard','summary');
+        else { show('Tidak ada cadangan sesi sebelumnya yang perlu dipulihkan.','info'); scrollToMobileTarget_('recorderSummary','summary'); }
+      });
+      el('btnMoreProtection').addEventListener('click', function() { closeMobileMore_(); scrollToMobileTarget_('protectionInfo','summary'); });
+      el('btnMoreCloseRecorder').addEventListener('click', function() { closeMobileMore_(); closeRecorder(); });
+      const mq = window.matchMedia('(max-width:640px)');
+      const onBreakpoint = function(event) {
+        if (event.matches) setMobileSettingsExpanded_(false);
+        else { el('audioSetupCard').classList.remove('mobile-collapsed'); closeMobileMore_(); }
+        updateButtons();
+      };
+      if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onBreakpoint);
+      if (mq.matches) setMobileSettingsExpanded_(false);
+      updateMobileRecordAction_();
+      setMobileNavActive_('summary');
+    }
+
+    function setMobileSettingsExpanded_(expanded) {
+      state.mobileSettingsExpanded = Boolean(expanded);
+      const card=el('audioSetupCard'), button=el('btnMobileSettings'), chevron=el('mobileSettingsChevron');
+      card.classList.toggle('mobile-collapsed',!state.mobileSettingsExpanded);
+      button.setAttribute('aria-expanded',state.mobileSettingsExpanded?'true':'false');
+      chevron.textContent=state.mobileSettingsExpanded?'⌃':'⌄';
+    }
+
+    function setMobileNavActive_(key) {
+      document.querySelectorAll('[data-mobile-nav]').forEach(function(button) {
+        button.classList.toggle('active',button.getAttribute('data-mobile-nav')===key);
+      });
+    }
+
+    function scrollToMobileTarget_(elementId,navKey) {
+      const node=el(elementId); if(!node)return;
+      if(navKey)setMobileNavActive_(navKey);
+      node.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function handleMobileNav_(key) {
+      if(!isMobileRecorder_())return;
+      if(key==='summary'){scrollToMobileTarget_('recorderSummary','summary');return;}
+      if(key==='transcript'){scrollToMobileTarget_('transcriptCard','transcript');return;}
+      if(key==='audio'){scrollToMobileTarget_('audioCard','audio');return;}
+      if(key==='more'){setMobileNavActive_('more');openMobileMore_();}
+    }
+
+    async function handleMobileRecordAction_() {
+      if(!isMobileRecorder_())return;
+      setMobileNavActive_('summary');
+      if(!state.sessionActive||state.paused) await startOrResumeSession();
+      scrollToMobileTarget_('recordControls','summary');
+    }
+
+    function updateMobileRecordAction_() {
+      const button=el('mobileRecordAction'),icon=el('mobileRecordIcon'),label=el('mobileRecordLabel');
+      button.classList.remove('recording','paused','done');
+      if(state.sessionActive){
+        if(state.paused){button.classList.add('paused');icon.textContent='▶';label.textContent='Lanjut';button.setAttribute('aria-label','Lanjutkan perekaman');return;}
+        button.classList.add('recording');icon.textContent='●';label.textContent='Merekam';button.setAttribute('aria-label','Perekaman sedang aktif');return;
+      }
+      if(state.audioBlob&&state.audioBlob.size){button.classList.add('done');icon.textContent='✓';label.textContent='Selesai';button.setAttribute('aria-label','Perekaman selesai');return;}
+      icon.textContent='🎙️';label.textContent='Rekam';button.setAttribute('aria-label','Mulai merekam');
+    }
+
+    function openMobileMore_(){if(!isMobileRecorder_())return;state.mobileMoreOpen=true;el('mobileMoreBackdrop').hidden=false;el('mobileMoreSheet').classList.add('open');el('mobileMoreSheet').setAttribute('aria-hidden','false');document.body.classList.add('mobile-more-open');}
+    function closeMobileMore_(){state.mobileMoreOpen=false;const b=el('mobileMoreBackdrop'),s=el('mobileMoreSheet');if(b)b.hidden=true;if(s){s.classList.remove('open');s.setAttribute('aria-hidden','true');}document.body.classList.remove('mobile-more-open');if(isMobileRecorder_())setMobileNavActive_('summary');}
+    function recorderStartLabel_(mode){const mobile=isMobileRecorder_();if(mode==='resume')return mobile?'▶ Lanjut':'▶ Lanjutkan Mencatat';if(mode==='recording')return mobile?'● Merekam':'🔴 Sedang Mencatat';return mobile?'● Mulai':'🔴 Mulai Mencatat';}
 
     function initRecognition() {
       const SR =
@@ -2031,6 +2175,7 @@
 
       if (blob && blob.size) {
         setAudioBlob(blob);
+        updateMobileRecordAction_();
 
         renderAudioDiagnostic(blob);
 
@@ -3107,6 +3252,7 @@
       state.sessionId = '';
 
       clearAudioPreview();
+      updateMobileRecordAction_();
 
       el('btnClearBackup').disabled =
         true;
@@ -3132,30 +3278,27 @@
     function updateButtons() {
       if (!state.sessionActive) {
         el('btnStart').disabled = false;
-        el('btnStart').textContent =
-          '🔴 Mulai Mencatat';
-
+        el('btnStart').textContent = recorderStartLabel_('idle');
         el('btnPause').disabled = true;
         el('btnStop').disabled = true;
+        updateMobileRecordAction_();
         return;
       }
 
       if (state.paused) {
         el('btnStart').disabled = false;
-        el('btnStart').textContent =
-          '▶ Lanjutkan Mencatat';
-
+        el('btnStart').textContent = recorderStartLabel_('resume');
         el('btnPause').disabled = true;
         el('btnStop').disabled = false;
+        updateMobileRecordAction_();
         return;
       }
 
       el('btnStart').disabled = true;
-      el('btnStart').textContent =
-        '🔴 Sedang Mencatat';
-
+      el('btnStart').textContent = recorderStartLabel_('recording');
       el('btnPause').disabled = false;
       el('btnStop').disabled = false;
+      updateMobileRecordAction_();
     }
 
     function updateCapabilityChips() {
@@ -3281,7 +3424,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.3',
+        version:'3.0.2.4',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
