@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.4</title>
+  <title>Perekam Notulen Rapat v3.0.2.4.1</title>
 
   <style>
     :root {
@@ -564,7 +564,7 @@
     }
   
     /* =========================================================
-       v3.0.2.4 — MOBILE RECORDER UX REDESIGN
+       v3.0.2.4.1 — MOBILE RECORDER UX REDESIGN
        ========================================================= */
     .mobile-settings-toggle,.mobile-bottom-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
     @media (max-width:640px){
@@ -597,6 +597,104 @@
     }
     @media (max-width:360px){body{padding-left:6px;padding-right:6px}.top-card,.card,.recovery{border-radius:14px}.brand p{max-width:190px}.status-grid{grid-template-columns:1fr 1fr}.status-grid .status-box:first-child{grid-column:1/-1}.controls{grid-template-columns:1fr 1fr}#btnStart{grid-column:1/-1}.audio-actions{grid-template-columns:1fr}.mobile-bottom-nav{left:5px;right:5px}}
 
+  
+    /* =========================================================
+       v3.0.2.4.1 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
+       ========================================================= */
+    .transcription-mode-notice {
+      margin:0 0 8px;
+      padding:8px 9px;
+      border:1px solid #dbeafe;
+      border-radius:10px;
+      background:#eff6ff;
+      color:#1e40af;
+      font-size:7px;
+      line-height:1.45;
+    }
+
+    .transcription-mode-notice.ok {
+      border-color:#bbf7d0;
+      background:#f0fdf4;
+      color:#166534;
+    }
+
+    .transcription-mode-notice.warn {
+      border-color:#fde68a;
+      background:#fffbeb;
+      color:#92400e;
+    }
+
+    @media (max-width:640px) {
+      /* Bottom nav switches actual views instead of only scrolling. */
+      body.mobile-view-summary #transcriptCard,
+      body.mobile-view-summary #audioCard,
+      body.mobile-view-summary #recoveryCard,
+      body.mobile-view-summary #recorderFootNote {
+        display:none !important;
+      }
+
+      body.mobile-view-transcript #recorderSummary,
+      body.mobile-view-transcript #audioCard,
+      body.mobile-view-transcript #recoveryCard,
+      body.mobile-view-transcript #recorderFootNote {
+        display:none !important;
+      }
+
+      body.mobile-view-audio #recorderSummary,
+      body.mobile-view-audio #transcriptCard,
+      body.mobile-view-audio #recoveryCard {
+        display:none !important;
+      }
+
+      body.mobile-view-recovery #recorderSummary,
+      body.mobile-view-recovery #transcriptCard,
+      body.mobile-view-recovery #audioCard,
+      body.mobile-view-recovery #recorderFootNote {
+        display:none !important;
+      }
+
+      body.mobile-view-summary #recorderSummary,
+      body.mobile-view-transcript #transcriptCard,
+      body.mobile-view-audio #audioCard,
+      body.mobile-view-recovery #recoveryCard {
+        display:block !important;
+        margin-top:0;
+      }
+
+      body.mobile-view-audio #recorderFootNote {
+        display:block !important;
+      }
+
+      body.mobile-view-transcript #transcriptCard,
+      body.mobile-view-audio #audioCard,
+      body.mobile-view-recovery #recoveryCard {
+        min-height:calc(100dvh - var(--mobile-nav-height) - 30px);
+      }
+
+      body.mobile-view-transcript #transcriptCard {
+        display:flex !important;
+        flex-direction:column;
+      }
+
+      body.mobile-view-transcript #transcript {
+        flex:1 1 auto;
+        min-height:calc(100dvh - var(--mobile-nav-height) - 245px);
+        max-height:none;
+      }
+
+      body.mobile-view-audio #audioCard {
+        display:block !important;
+      }
+
+      body.mobile-view-audio #audioPreview {
+        width:100%;
+      }
+
+      body.mobile-view-recovery #recoveryCard {
+        align-self:start;
+      }
+    }
+
   </style>
 </head>
 
@@ -612,7 +710,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.4</div>
+        <div class="version">v3.0.2.4.1</div>
       </div>
 
       <div class="meeting-card">
@@ -751,6 +849,8 @@
         <span id="transcriptBadge" class="badge">Menunggu</span>
       </div>
 
+      <div id="transcriptionModeNotice" class="transcription-mode-notice"></div>
+
       <div id="interim" class="interim">
         Tekan “Mulai Mencatat” untuk memulai.
       </div>
@@ -798,8 +898,8 @@
       </div>
     </section>
 
-    <div class="foot-note">
-      Audio cadangan v3.0.2.4 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+    <div id="recorderFootNote" class="foot-note">
+      Audio cadangan v3.0.2.4.1 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -904,7 +1004,8 @@
       recoveryMeta:null,
       backgrounded:false,
       mobileSettingsExpanded:false,
-      mobileMoreOpen:false
+      mobileMoreOpen:false,
+      mobileView:'summary' 
     };
 
     function init() {
@@ -923,6 +1024,7 @@
       el('audioSourceMode').addEventListener('change', function() {
         state.sourceMode = el('audioSourceMode').value || 'mic';
         updateAudioSourceHelp();
+        updateTranscriptionModeNotice_();
       });
       el('micSelect').addEventListener('change', function(){ state.selectedDeviceId = el('micSelect').value || ''; });
       el('audioProfile').addEventListener('change', applyAudioProfile);
@@ -950,12 +1052,13 @@
       updateCapabilityChips();
       enumerateMicrophones();
       updateAudioSourceHelp();
+      updateTranscriptionModeNotice_();
       checkRecovery();
       initMobileRecorderUI();
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.4',
+        version:'3.0.2.4.1',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -980,24 +1083,30 @@
       el('mobileRecordAction').addEventListener('click', handleMobileRecordAction_);
       el('mobileMoreBackdrop').addEventListener('click', closeMobileMore_);
       el('btnCloseMobileMore').addEventListener('click', closeMobileMore_);
-      el('btnMoreAudioSettings').addEventListener('click', function() { closeMobileMore_(); setMobileSettingsExpanded_(true); scrollToMobileTarget_('audioSetupCard','summary'); });
+      el('btnMoreAudioSettings').addEventListener('click', function() { closeMobileMore_(); setMobilePrimaryView_('summary'); setMobileSettingsExpanded_(true); });
       el('btnMoreRecovery').addEventListener('click', function() {
         closeMobileMore_();
-        if (!el('recoveryCard').hidden) scrollToMobileTarget_('recoveryCard','summary');
-        else { show('Tidak ada cadangan sesi sebelumnya yang perlu dipulihkan.','info'); scrollToMobileTarget_('recorderSummary','summary'); }
+        if (!el('recoveryCard').hidden) setMobilePrimaryView_('recovery');
+        else { show('Tidak ada cadangan sesi sebelumnya yang perlu dipulihkan.','info'); setMobilePrimaryView_('summary'); }
       });
-      el('btnMoreProtection').addEventListener('click', function() { closeMobileMore_(); scrollToMobileTarget_('protectionInfo','summary'); });
+      el('btnMoreProtection').addEventListener('click', function() { closeMobileMore_(); setMobilePrimaryView_('summary'); setMobileSettingsExpanded_(false); });
       el('btnMoreCloseRecorder').addEventListener('click', function() { closeMobileMore_(); closeRecorder(); });
       const mq = window.matchMedia('(max-width:640px)');
       const onBreakpoint = function(event) {
-        if (event.matches) setMobileSettingsExpanded_(false);
-        else { el('audioSetupCard').classList.remove('mobile-collapsed'); closeMobileMore_(); }
+        if (event.matches) {
+          setMobileSettingsExpanded_(false);
+          setMobilePrimaryView_(state.mobileView || 'summary');
+        } else {
+          el('audioSetupCard').classList.remove('mobile-collapsed');
+          closeMobileMore_();
+          clearMobileViewClasses_();
+        }
         updateButtons();
       };
       if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onBreakpoint);
       if (mq.matches) setMobileSettingsExpanded_(false);
       updateMobileRecordAction_();
-      setMobileNavActive_('summary');
+      setMobilePrimaryView_('summary');
     }
 
     function setMobileSettingsExpanded_(expanded) {
@@ -1008,31 +1117,103 @@
       chevron.textContent=state.mobileSettingsExpanded?'⌃':'⌄';
     }
 
+    function clearMobileViewClasses_() {
+      document.body.classList.remove(
+        'mobile-view-summary',
+        'mobile-view-transcript',
+        'mobile-view-audio',
+        'mobile-view-recovery'
+      );
+    }
+
     function setMobileNavActive_(key) {
       document.querySelectorAll('[data-mobile-nav]').forEach(function(button) {
-        button.classList.toggle('active',button.getAttribute('data-mobile-nav')===key);
+        button.classList.toggle(
+          'active',
+          button.getAttribute('data-mobile-nav') === key
+        );
       });
     }
 
-    function scrollToMobileTarget_(elementId,navKey) {
-      const node=el(elementId); if(!node)return;
-      if(navKey)setMobileNavActive_(navKey);
-      node.scrollIntoView({behavior:'smooth',block:'start'});
+    function setMobilePrimaryView_(key) {
+      state.mobileView = key || 'summary';
+
+      if (!isMobileRecorder_()) {
+        clearMobileViewClasses_();
+        return;
+      }
+
+      clearMobileViewClasses_();
+      document.body.classList.add(
+        'mobile-view-' + state.mobileView
+      );
+
+      if (state.mobileView === 'summary') {
+        setMobileNavActive_('summary');
+      } else if (state.mobileView === 'transcript') {
+        setMobileNavActive_('transcript');
+      } else if (state.mobileView === 'audio') {
+        setMobileNavActive_('audio');
+      } else if (state.mobileView === 'recovery') {
+        setMobileNavActive_('more');
+      }
+
+      window.scrollTo({
+        top:0,
+        left:0,
+        behavior:'smooth'
+      });
+    }
+
+    function scrollToMobileTarget_(elementId, navKey) {
+      // Kept for desktop/backward-compatible utility calls.
+      const node = el(elementId);
+      if (!node) return;
+
+      if (navKey) setMobileNavActive_(navKey);
+
+      node.scrollIntoView({
+        behavior:'smooth',
+        block:'start'
+      });
     }
 
     function handleMobileNav_(key) {
-      if(!isMobileRecorder_())return;
-      if(key==='summary'){scrollToMobileTarget_('recorderSummary','summary');return;}
-      if(key==='transcript'){scrollToMobileTarget_('transcriptCard','transcript');return;}
-      if(key==='audio'){scrollToMobileTarget_('audioCard','audio');return;}
-      if(key==='more'){setMobileNavActive_('more');openMobileMore_();}
+      if (!isMobileRecorder_()) return;
+
+      if (key === 'summary') {
+        closeMobileMore_();
+        setMobilePrimaryView_('summary');
+        return;
+      }
+
+      if (key === 'transcript') {
+        closeMobileMore_();
+        setMobilePrimaryView_('transcript');
+        return;
+      }
+
+      if (key === 'audio') {
+        closeMobileMore_();
+        setMobilePrimaryView_('audio');
+        return;
+      }
+
+      if (key === 'more') {
+        setMobileNavActive_('more');
+        openMobileMore_();
+      }
     }
 
     async function handleMobileRecordAction_() {
-      if(!isMobileRecorder_())return;
-      setMobileNavActive_('summary');
-      if(!state.sessionActive||state.paused) await startOrResumeSession();
-      scrollToMobileTarget_('recordControls','summary');
+      if (!isMobileRecorder_()) return;
+
+      closeMobileMore_();
+      setMobilePrimaryView_('summary');
+
+      if (!state.sessionActive || state.paused) {
+        await startOrResumeSession();
+      }
     }
 
     function updateMobileRecordAction_() {
@@ -1047,7 +1228,7 @@
     }
 
     function openMobileMore_(){if(!isMobileRecorder_())return;state.mobileMoreOpen=true;el('mobileMoreBackdrop').hidden=false;el('mobileMoreSheet').classList.add('open');el('mobileMoreSheet').setAttribute('aria-hidden','false');document.body.classList.add('mobile-more-open');}
-    function closeMobileMore_(){state.mobileMoreOpen=false;const b=el('mobileMoreBackdrop'),s=el('mobileMoreSheet');if(b)b.hidden=true;if(s){s.classList.remove('open');s.setAttribute('aria-hidden','true');}document.body.classList.remove('mobile-more-open');if(isMobileRecorder_())setMobileNavActive_('summary');}
+    function closeMobileMore_(){state.mobileMoreOpen=false;const b=el('mobileMoreBackdrop'),s=el('mobileMoreSheet');if(b)b.hidden=true;if(s){s.classList.remove('open');s.setAttribute('aria-hidden','true');}document.body.classList.remove('mobile-more-open');if(isMobileRecorder_()){if(state.mobileView==='transcript')setMobileNavActive_('transcript');else if(state.mobileView==='audio')setMobileNavActive_('audio');else if(state.mobileView==='recovery')setMobileNavActive_('more');else setMobileNavActive_('summary');}}
     function recorderStartLabel_(mode){const mobile=isMobileRecorder_();if(mode==='resume')return mobile?'▶ Lanjut':'▶ Lanjutkan Mencatat';if(mode==='recording')return mobile?'● Merekam':'🔴 Sedang Mencatat';return mobile?'● Mulai':'🔴 Mulai Mencatat';}
 
     function initRecognition() {
@@ -1325,6 +1506,8 @@
 
         state.sourceMode =
           sourceMode;
+
+        updateTranscriptionModeNotice_();
 
         setStatus(
           sourceMode === 'system' ||
@@ -1630,7 +1813,7 @@
           setChip(
             'speechChip',
             'warn',
-            '📝 Transkripsi live nonaktif untuk Audio Sistem'
+            '📝 Audio Sistem: transkripsi live tidak tersedia'
           );
 
           el('transcriptBadge')
@@ -2584,6 +2767,50 @@
       state.compressorNode.ratio.value = 3.2;
     }
 
+    function updateTranscriptionModeNotice_() {
+      const node = el('transcriptionModeNotice');
+      if (!node) return;
+
+      const mode =
+        (el('audioSourceMode') && el('audioSourceMode').value) ||
+        state.sourceMode ||
+        'mic';
+
+      node.className = 'transcription-mode-notice';
+
+      if (!state.speechSupported) {
+        node.classList.add('warn');
+        node.textContent =
+          'Transkripsi Live tidak tersedia pada browser ini. Audio cadangan tetap dapat digunakan.';
+        return;
+      }
+
+      if (mode === 'system') {
+        node.classList.add('warn');
+        node.textContent =
+          'Mode Audio Tab / Sistem merekam audio digital, tetapi Web Speech Recognition tidak dapat menerima stream sistem secara langsung. Mode ini adalah audio saja.';
+        return;
+      }
+
+      if (mode === 'mixed') {
+        node.classList.add('info');
+        node.textContent =
+          'Mode Campuran merekam Mic + Audio Tab. Transkripsi Live tetap mendengarkan mikrofon; audio tab/sistem tidak ditranskrip langsung.';
+        return;
+      }
+
+      if (mode === 'media') {
+        node.classList.add('info');
+        node.textContent =
+          'Transkripsi Live mendengarkan mikrofon. Gunakan mode ini bila suara YouTube/Meet diputar melalui speaker dan terdengar oleh mikrofon.';
+        return;
+      }
+
+      node.classList.add('ok');
+      node.textContent =
+        'Transkripsi Live mendengarkan mikrofon perangkat dan mengirim kalimat final ke Form Notulen.';
+    }
+
     function updateAudioSourceHelp() {
       const mode =
         el('audioSourceMode')
@@ -3424,7 +3651,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.4',
+        version:'3.0.2.4.1',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
