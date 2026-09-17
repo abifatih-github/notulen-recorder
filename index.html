@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.2</title>
+  <title>Perekam Notulen Rapat v3.0.2.3</title>
 
   <style>
     :root {
@@ -159,7 +159,7 @@
 
     .audio-setup-grid {
       display:grid;
-      grid-template-columns:1.15fr .85fr;
+      grid-template-columns:1fr 1fr 1fr;
       gap:8px;
     }
 
@@ -187,6 +187,17 @@
     .audio-setup-help {
       margin-top:7px;
       color:#64748b;
+      font-size:8px;
+      line-height:1.5;
+    }
+
+    .source-mode-warning {
+      margin-top:8px;
+      padding:8px 9px;
+      border:1px solid #bfdbfe;
+      border-radius:9px;
+      background:#eff6ff;
+      color:#1e40af;
       font-size:8px;
       line-height:1.5;
     }
@@ -566,7 +577,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.2</div>
+        <div class="version">v3.0.2.3</div>
       </div>
 
       <div class="meeting-card">
@@ -578,6 +589,16 @@
       <div class="audio-setup-card">
         <div class="audio-setup-grid">
           <div class="setup-field">
+            <label for="audioSourceMode">Sumber Audio</label>
+            <select id="audioSourceMode">
+              <option value="mic" selected>🎙️ Suara Rapat / Mikrofon</option>
+              <option value="media">🔊 Speaker / Media melalui Mikrofon</option>
+              <option value="system">🖥️ Audio Tab / Sistem</option>
+              <option value="mixed">🎚️ Campuran Mic + Audio Tab</option>
+            </select>
+          </div>
+
+          <div class="setup-field" id="micSelectField">
             <label for="micSelect">Mikrofon</label>
             <select id="micSelect">
               <option value="">Mikrofon Default</option>
@@ -585,7 +606,7 @@
           </div>
 
           <div class="setup-field">
-            <label for="audioProfile">Kualitas Suara</label>
+            <label for="audioProfile">Kualitas Suara Mikrofon</label>
             <select id="audioProfile">
               <option value="meeting" selected>Jernih untuk Rapat (Disarankan)</option>
               <option value="natural">Natural / Tanpa Penguatan</option>
@@ -593,8 +614,14 @@
             </select>
           </div>
         </div>
-        <div class="audio-setup-help">
-          Pilih mikrofon yang benar sebelum menekan <strong>Mulai Mencatat</strong>.
+        <div id="audioSourceHelp" class="audio-setup-help">
+          Mode <strong>Suara Rapat</strong> cocok untuk pembicara di ruangan.
+          Untuk YouTube/Meet di laptop, pilih <strong>Audio Tab / Sistem</strong>.
+        </div>
+
+        <div id="systemAudioWarning" class="source-mode-warning" hidden>
+          Saat Chrome menampilkan pemilih, pilih <strong>tab Chrome</strong> yang ingin direkam dan aktifkan
+          <strong>Bagikan juga audio tab / Share tab audio</strong>. Dukungan audio sistem bergantung pada browser dan OS.
         </div>
       </div>
 
@@ -733,7 +760,7 @@
     </section>
 
     <div class="foot-note">
-      Audio cadangan v3.0.2.2 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.3 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -781,6 +808,7 @@
       paused:false,
       stopping:false,
       stream:null,
+      displayStream:null,
       recordingStream:null,
       captureDestination:null,
       highpassNode:null,
@@ -788,6 +816,11 @@
       compressorNode:null,
       gainNode:null,
       selectedDeviceId:'',
+      sourceMode:'mic',
+      micSourceNode:null,
+      systemSourceNode:null,
+      systemGainNode:null,
+      mixBusNode:null,
       mediaRecorder:null,
       mediaMime:'',
       audioChunks:[],
@@ -826,6 +859,10 @@
       el('btnClearBackup').addEventListener('click', clearCurrentBackup);
       el('btnRecover').addEventListener('click', recoverPreviousSession);
       el('btnDiscardRecovery').addEventListener('click', discardRecovery);
+      el('audioSourceMode').addEventListener('change', function() {
+        state.sourceMode = el('audioSourceMode').value || 'mic';
+        updateAudioSourceHelp();
+      });
       el('micSelect').addEventListener('change', function(){ state.selectedDeviceId = el('micSelect').value || ''; });
       el('audioProfile').addEventListener('change', applyAudioProfile);
 
@@ -851,11 +888,12 @@
       initRecognition();
       updateCapabilityChips();
       enumerateMicrophones();
+      updateAudioSourceHelp();
       checkRecovery();
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.2',
+        version:'3.0.2.3',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -1090,11 +1128,10 @@
 
       if (
         !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia ||
         !window.MediaRecorder
       ) {
         const msg =
-          'Browser ini tidak mendukung MediaRecorder/getUserMedia yang diperlukan untuk audio cadangan.';
+          'Browser ini tidak mendukung MediaRecorder yang diperlukan untuk audio cadangan.';
 
         show(msg, 'error');
 
@@ -1138,45 +1175,184 @@
       updateTimer();
 
       try {
+        const sourceMode =
+          el('audioSourceMode').value ||
+          'mic';
+
+        state.sourceMode =
+          sourceMode;
+
         setStatus(
-          'Meminta akses mikrofon…',
+          sourceMode === 'system' ||
+          sourceMode === 'mixed'
+            ? 'Pilih tab / layar dan bagikan audio…'
+            : 'Meminta akses mikrofon…',
           'recovering'
         );
 
-        const selectedDeviceId = el('micSelect').value || '';
+        const selectedDeviceId =
+          el('micSelect').value || '';
 
-        const audioConstraints = {
-          echoCancellation:true,
-          noiseSuppression:true,
-          autoGainControl:true,
-          channelCount:{ ideal:1 },
-          sampleRate:{ ideal:48000 },
-          sampleSize:{ ideal:16 }
-        };
+        let micStream = null;
+        let displayStream = null;
 
-        if (selectedDeviceId) {
-          audioConstraints.deviceId = { exact:selectedDeviceId };
+        if (
+          sourceMode === 'mic' ||
+          sourceMode === 'media' ||
+          sourceMode === 'mixed'
+        ) {
+          if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+          ) {
+            throw new Error(
+              'Browser tidak mendukung akses mikrofon.'
+            );
+          }
+
+          const audioConstraints = {
+            echoCancellation:
+              sourceMode === 'media'
+                ? false
+                : true,
+            noiseSuppression:
+              sourceMode === 'media'
+                ? false
+                : true,
+            autoGainControl:
+              sourceMode === 'media'
+                ? false
+                : true,
+            channelCount:{ ideal:1 },
+            sampleRate:{ ideal:48000 },
+            sampleSize:{ ideal:16 }
+          };
+
+          if (selectedDeviceId) {
+            audioConstraints.deviceId = {
+              exact:selectedDeviceId
+            };
+          }
+
+          micStream =
+            await navigator.mediaDevices
+              .getUserMedia({
+                audio:audioConstraints
+              });
         }
 
-        const stream =
-          await navigator.mediaDevices
-            .getUserMedia({
-              audio:audioConstraints
+        if (
+          sourceMode === 'system' ||
+          sourceMode === 'mixed'
+        ) {
+          if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getDisplayMedia
+          ) {
+            throw new Error(
+              'Browser ini tidak mendukung Audio Tab / Sistem.'
+            );
+          }
+
+          displayStream =
+            await navigator.mediaDevices
+              .getDisplayMedia({
+                video:{
+                  frameRate:{
+                    ideal:1,
+                    max:5
+                  }
+                },
+                audio:true
+              });
+
+          if (
+            !displayStream
+              .getAudioTracks()
+              .length
+          ) {
+            stopStreamTracks(displayStream);
+
+            throw new Error(
+              'Audio tab/sistem tidak terbagi. Ulangi dan aktifkan “Bagikan juga audio tab / Share tab audio”.'
+            );
+          }
+
+          displayStream
+            .getAudioTracks()
+            .forEach(function(track) {
+              track.addEventListener(
+                'ended',
+                function() {
+                  notify({
+                    type:'NOTULEN_RECORDER_WARNING',
+                    message:
+                      'Berbagi Audio Tab/Sistem dihentikan. Jika rekaman masih berjalan, sumber sistem tidak lagi masuk ke audio.'
+                  });
+
+                  show(
+                    'Berbagi Audio Tab/Sistem dihentikan.',
+                    'error'
+                  );
+                }
+              );
             });
+        }
 
-        state.stream = stream;
+        state.stream = micStream;
+        state.displayStream =
+          displayStream;
 
-        const micTrack = stream.getAudioTracks()[0];
-        const micLabel = micTrack && micTrack.label ? micTrack.label : 'Mikrofon aktif';
+        const micTrack =
+          micStream &&
+          micStream.getAudioTracks
+            ? micStream
+                .getAudioTracks()[0]
+            : null;
 
-        setChip('micChip','ok','🎤 ' + micLabel);
+        if (micTrack) {
+          const micLabel =
+            micTrack.label ||
+            'Mikrofon aktif';
 
-        await enumerateMicrophones(
-          micTrack && micTrack.getSettings ? micTrack.getSettings().deviceId : ''
-        );
+          setChip(
+            'micChip',
+            'ok',
+            '🎤 ' + micLabel
+          );
+
+          await enumerateMicrophones(
+            micTrack.getSettings
+              ? micTrack
+                  .getSettings()
+                  .deviceId
+              : ''
+          );
+        } else {
+          setChip(
+            'micChip',
+            '',
+            '🎤 Mikrofon tidak digunakan'
+          );
+        }
 
         const recorderStream =
-          await setupAudioCapturePipeline(stream);
+          await setupAudioCapturePipeline(
+            micStream,
+            displayStream,
+            sourceMode
+          );
+
+        if (
+          !recorderStream ||
+          !recorderStream
+            .getAudioTracks()
+            .length
+        ) {
+          throw new Error(
+            'Tidak ada jalur audio yang dapat direkam.'
+          );
+        }
 
         state.recordingStream =
           recorderStream;
@@ -1187,10 +1363,12 @@
         const options = {};
 
         if (mimeType) {
-          options.mimeType = mimeType;
+          options.mimeType =
+            mimeType;
         }
 
-        options.audioBitsPerSecond = 128000;
+        options.audioBitsPerSecond =
+          128000;
 
         let mediaRecorder;
 
@@ -1205,7 +1383,9 @@
             new MediaRecorder(
               recorderStream,
               mimeType
-                ? { mimeType:mimeType }
+                ? {
+                    mimeType:mimeType
+                  }
                 : undefined
             );
         }
@@ -1251,23 +1431,39 @@
           status:'recording',
           mimeType:state.mediaMime,
           startedAt:
-            new Date().toISOString(),
+            new Date()
+              .toISOString(),
           duration:0,
           transcript:''
         });
 
-        persistRecoveryMeta('recording');
+        persistRecoveryMeta(
+          'recording'
+        );
 
         mediaRecorder.start(4000);
 
         state.sessionActive = true;
-        el('micSelect').disabled = true;
-        el('audioProfile').disabled = true;
+
+        el('audioSourceMode').disabled =
+          true;
+
+        el('micSelect').disabled =
+          true;
+
+        el('audioProfile').disabled =
+          true;
 
         setChip(
           'audioChip',
           'ok',
-          '💾 Audio cadangan aktif'
+          sourceMode === 'system'
+            ? '💾 Audio Tab/Sistem aktif'
+            : (
+                sourceMode === 'mixed'
+                  ? '💾 Mic + Audio Tab aktif'
+                  : '💾 Audio cadangan aktif'
+              )
         );
 
         el('audioBadge').textContent =
@@ -1278,7 +1474,32 @@
 
         startTimer();
         await requestWakeLock();
-        startRecognition();
+
+        if (
+          sourceMode !== 'system'
+        ) {
+          startRecognition();
+        } else {
+          state.shouldRestartRecognition =
+            false;
+
+          setChip(
+            'speechChip',
+            'warn',
+            '📝 Transkripsi live nonaktif untuk Audio Sistem'
+          );
+
+          el('transcriptBadge')
+            .textContent =
+            'Audio saja';
+
+          el('transcriptBadge')
+            .className =
+            'badge';
+
+          el('interim').textContent =
+            'Audio Tab/Sistem direkam secara digital. Web Speech Recognition tidak dapat menerima stream audio sistem secara langsung.';
+        }
 
         setStatus(
           '🔴 Sedang merekam',
@@ -1286,12 +1507,18 @@
         );
 
         show(
-          state.speechSupported
-            ? 'Audio cadangan dan transkripsi live dimulai.'
-            : 'Audio cadangan dimulai. Browser ini tidak menyediakan Speech Recognition live.',
-          state.speechSupported
-            ? 'success'
-            : 'info'
+          sourceMode === 'system'
+            ? 'Audio Tab/Sistem mulai direkam secara digital.'
+            : (
+                sourceMode === 'mixed'
+                  ? 'Mikrofon dan Audio Tab/Sistem mulai direkam bersama.'
+                  : (
+                      state.speechSupported
+                        ? 'Audio cadangan dan transkripsi live dimulai.'
+                        : 'Audio cadangan dimulai.'
+                    )
+              ),
+          'success'
         );
 
         updateButtons();
@@ -1299,16 +1526,17 @@
 
       } catch (err) {
         state.sessionActive = false;
-        el('micSelect').disabled = false;
-        el('audioProfile').disabled = false;
+
+        el('audioSourceMode').disabled =
+          false;
+
+        el('micSelect').disabled =
+          false;
+
+        el('audioProfile').disabled =
+          false;
 
         stopMediaTracks();
-
-        setChip(
-          'micChip',
-          'warn',
-          '🎤 Akses mikrofon gagal'
-        );
 
         setChip(
           'audioChip',
@@ -1317,23 +1545,29 @@
         );
 
         setStatus(
-          'Akses mikrofon gagal',
+          'Gagal memulai perekam',
           'paused'
         );
 
         const message =
-          err && err.name === 'NotAllowedError'
-            ? 'Izin mikrofon ditolak. Izinkan mikrofon untuk halaman GitHub Pages perekam, lalu coba lagi.'
+          err &&
+          err.name ===
+            'NotAllowedError'
+            ? 'Izin perekaman dibatalkan/ditolak. Berikan izin mikrofon atau pilih tab yang ingin dibagikan.'
             : (
-                'Gagal membuka mikrofon: ' +
+                'Gagal memulai perekam: ' +
                 (
-                  err && err.message
+                  err &&
+                  err.message
                     ? err.message
                     : err
                 )
               );
 
-        show(message, 'error');
+        show(
+          message,
+          'error'
+        );
 
         notify({
           type:'NOTULEN_RECORDER_ERROR',
@@ -1350,7 +1584,8 @@
 
       if (
         state.mediaRecorder &&
-        state.mediaRecorder.state === 'paused'
+        state.mediaRecorder.state ===
+          'paused'
       ) {
         try {
           state.mediaRecorder.resume();
@@ -1360,7 +1595,13 @@
       setChip(
         'audioChip',
         'ok',
-        '💾 Audio cadangan aktif'
+        state.sourceMode === 'system'
+          ? '💾 Audio Tab/Sistem aktif'
+          : (
+              state.sourceMode === 'mixed'
+                ? '💾 Mic + Audio Tab aktif'
+                : '💾 Audio cadangan aktif'
+            )
       );
 
       el('audioBadge').textContent =
@@ -1369,20 +1610,38 @@
       el('audioBadge').className =
         'badge active';
 
-      state.shouldRestartRecognition = true;
-
       await requestWakeLock();
-      startRecognition();
 
-      persistRecoveryMeta('recording');
-      updateSessionStatus('recording');
+      if (
+        state.sourceMode !== 'system'
+      ) {
+        state.shouldRestartRecognition =
+          true;
+
+        startRecognition();
+      } else {
+        state.shouldRestartRecognition =
+          false;
+      }
+
+      persistRecoveryMeta(
+        'recording'
+      );
+
+      updateSessionStatus(
+        'recording'
+      );
 
       setStatus(
         '🔴 Sedang merekam',
         'listening'
       );
 
-      show('Perekaman dilanjutkan.', 'success');
+      show(
+        'Perekaman dilanjutkan.',
+        'success'
+      );
+
       updateButtons();
       notifyStatus('recording');
     }
@@ -1510,6 +1769,7 @@
 
     function startRecognition() {
       if (
+        state.sourceMode === 'system' ||
         !state.speechSupported ||
         !state.recognition ||
         !state.sessionActive ||
@@ -1533,6 +1793,7 @@
       clearRecognitionRestartTimer();
 
       if (
+        state.sourceMode === 'system' ||
         !state.sessionActive ||
         state.paused ||
         state.stopping ||
@@ -1733,6 +1994,7 @@
       state.sessionActive = false;
       state.stopping = false;
       state.paused = false;
+      el('audioSourceMode').disabled = false;
       el('micSelect').disabled = false;
       el('audioProfile').disabled = false;
       state.shouldRestartRecognition = false;
@@ -1898,90 +2160,255 @@
       return '';
     }
 
-    async function setupAudioCapturePipeline(stream) {
+    async function setupAudioCapturePipeline(
+      micStream,
+      systemStream,
+      sourceMode
+    ) {
       stopMeter();
 
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
 
       if (!AudioContext) {
-        setupSimpleTrackDiagnostics(stream);
-        return stream;
+        const fallback =
+          sourceMode === 'system'
+            ? systemStream
+            : (
+                micStream ||
+                systemStream
+              );
+
+        setupSimpleTrackDiagnostics(
+          fallback
+        );
+
+        return fallback;
       }
 
       try {
-        const context = new AudioContext();
+        const context =
+          new AudioContext();
 
-        if (context.state === 'suspended') {
-          try { await context.resume(); } catch (err) {}
+        if (
+          context.state ===
+          'suspended'
+        ) {
+          try {
+            await context.resume();
+          } catch (err) {}
         }
 
-        const source = context.createMediaStreamSource(stream);
+        const mixBus =
+          context.createGain();
 
-        const highpass = context.createBiquadFilter();
-        highpass.type = 'highpass';
-        highpass.frequency.value = 80;
-        highpass.Q.value = 0.7;
+        const analyser =
+          context.createAnalyser();
 
-        const presence = context.createBiquadFilter();
-        presence.type = 'peaking';
-        presence.frequency.value = 2600;
-        presence.Q.value = 0.85;
-
-        const compressor = context.createDynamicsCompressor();
-        compressor.threshold.value = -24;
-        compressor.knee.value = 18;
-        compressor.ratio.value = 3.2;
-        compressor.attack.value = 0.006;
-        compressor.release.value = 0.28;
-
-        const gain = context.createGain();
-
-        const analyser = context.createAnalyser();
         analyser.fftSize = 1024;
-        analyser.smoothingTimeConstant = 0.55;
+        analyser.smoothingTimeConstant =
+          0.55;
 
-        const destination = context.createMediaStreamDestination();
+        const destination =
+          context.createMediaStreamDestination();
 
-        source.connect(highpass);
-        highpass.connect(presence);
-        presence.connect(compressor);
-        compressor.connect(gain);
-        gain.connect(analyser);
+        state.audioContext =
+          context;
+
+        state.mixBusNode =
+          mixBus;
+
+        state.analyser =
+          analyser;
+
+        state.captureDestination =
+          destination;
+
+        /*
+         * Microphone branch:
+         * mic -> high-pass -> presence EQ
+         *     -> compressor -> gain -> mix bus
+         */
+        if (
+          micStream &&
+          micStream
+            .getAudioTracks()
+            .length
+        ) {
+          const micSource =
+            context.createMediaStreamSource(
+              micStream
+            );
+
+          const highpass =
+            context.createBiquadFilter();
+
+          highpass.type =
+            'highpass';
+
+          highpass.frequency.value =
+            80;
+
+          highpass.Q.value =
+            0.7;
+
+          const presence =
+            context.createBiquadFilter();
+
+          presence.type =
+            'peaking';
+
+          presence.frequency.value =
+            2600;
+
+          presence.Q.value =
+            0.85;
+
+          const compressor =
+            context.createDynamicsCompressor();
+
+          compressor.threshold.value =
+            -24;
+
+          compressor.knee.value =
+            18;
+
+          compressor.ratio.value =
+            3.2;
+
+          compressor.attack.value =
+            0.006;
+
+          compressor.release.value =
+            0.28;
+
+          const gain =
+            context.createGain();
+
+          micSource.connect(
+            highpass
+          );
+
+          highpass.connect(
+            presence
+          );
+
+          presence.connect(
+            compressor
+          );
+
+          compressor.connect(
+            gain
+          );
+
+          gain.connect(
+            mixBus
+          );
+
+          state.micSourceNode =
+            micSource;
+
+          state.highpassNode =
+            highpass;
+
+          state.presenceNode =
+            presence;
+
+          state.compressorNode =
+            compressor;
+
+          state.gainNode =
+            gain;
+
+          applyAudioProfile();
+        }
+
+        /*
+         * System/tab branch is deliberately NOT sent through
+         * the speech filters. Music, videos and meeting audio
+         * retain their original tonal balance.
+         */
+        if (
+          systemStream &&
+          systemStream
+            .getAudioTracks()
+            .length
+        ) {
+          const systemSource =
+            context.createMediaStreamSource(
+              systemStream
+            );
+
+          const systemGain =
+            context.createGain();
+
+          systemGain.gain.value =
+            sourceMode === 'mixed'
+              ? 0.88
+              : 1.0;
+
+          systemSource.connect(
+            systemGain
+          );
+
+          systemGain.connect(
+            mixBus
+          );
+
+          state.systemSourceNode =
+            systemSource;
+
+          state.systemGainNode =
+            systemGain;
+        }
+
+        mixBus.connect(analyser);
         analyser.connect(destination);
 
-        state.audioContext = context;
-        state.meterSource = source;
-        state.highpassNode = highpass;
-        state.presenceNode = presence;
-        state.compressorNode = compressor;
-        state.gainNode = gain;
-        state.analyser = analyser;
-        state.captureDestination = destination;
+        const recorderStream =
+          destination.stream;
 
-        applyAudioProfile();
-
-        const recorderStream = destination.stream;
-        const recorderTrack = recorderStream.getAudioTracks()[0];
+        const recorderTrack =
+          recorderStream
+            .getAudioTracks()[0];
 
         if (!recorderTrack) {
-          throw new Error('Jalur pemrosesan audio tidak menghasilkan track.');
+          throw new Error(
+            'Mixer audio tidak menghasilkan track.'
+          );
         }
 
-        recorderTrack.enabled = true;
+        recorderTrack.enabled =
+          true;
+
         startSignalMeter();
 
         return recorderStream;
 
       } catch (err) {
-        state.captureDestination = null;
-        setupSimpleTrackDiagnostics(stream);
+        state.captureDestination =
+          null;
+
+        const fallback =
+          sourceMode === 'system'
+            ? systemStream
+            : (
+                micStream ||
+                systemStream
+              );
+
+        setupSimpleTrackDiagnostics(
+          fallback
+        );
 
         notify({
           type:'NOTULEN_RECORDER_WARNING',
-          message:'Pemrosesan suara tidak tersedia. Recorder memakai mikrofon langsung sebagai fallback.'
+          message:
+            'Mixer audio tidak tersedia. Recorder memakai jalur audio langsung sebagai fallback.'
         });
 
-        return stream;
+        return fallback;
       }
     }
 
@@ -2010,6 +2437,66 @@
       state.presenceNode.gain.value = 2.8;
       state.compressorNode.threshold.value = -24;
       state.compressorNode.ratio.value = 3.2;
+    }
+
+    function updateAudioSourceHelp() {
+      const mode =
+        el('audioSourceMode')
+          .value ||
+        'mic';
+
+      state.sourceMode =
+        mode;
+
+      const help =
+        el('audioSourceHelp');
+
+      const warning =
+        el('systemAudioWarning');
+
+      const micField =
+        el('micSelectField');
+
+      const profileField =
+        el('audioProfile')
+          .closest('.setup-field');
+
+      warning.hidden =
+        !(
+          mode === 'system' ||
+          mode === 'mixed'
+        );
+
+      micField.style.opacity =
+        mode === 'system'
+          ? '.55'
+          : '1';
+
+      profileField.style.opacity =
+        mode === 'system'
+          ? '.55'
+          : '1';
+
+      if (mode === 'system') {
+        help.innerHTML =
+          'Mode <strong>Audio Tab / Sistem</strong> menangkap YouTube/Meet secara digital. Mikrofon dan profil suara mikrofon tidak digunakan.';
+        return;
+      }
+
+      if (mode === 'mixed') {
+        help.innerHTML =
+          'Mode <strong>Campuran Mic + Audio Tab</strong> merekam suara mikrofon dan audio digital tab secara bersamaan.';
+        return;
+      }
+
+      if (mode === 'media') {
+        help.innerHTML =
+          'Mode <strong>Speaker / Media melalui Mikrofon</strong> mematikan echo cancellation/noise suppression agar suara speaker lebih mudah tertangkap.';
+        return;
+      }
+
+      help.innerHTML =
+        'Mode <strong>Suara Rapat</strong> memprioritaskan pembicara di ruangan dengan echo cancellation dan noise suppression.';
     }
 
     async function enumerateMicrophones(preferredDeviceId) {
@@ -2155,22 +2642,79 @@
       state.presenceNode = null;
       state.compressorNode = null;
       state.gainNode = null;
+      state.micSourceNode = null;
+      state.systemSourceNode = null;
+      state.systemGainNode = null;
+      state.mixBusNode = null;
+    }
+
+    function stopStreamTracks(stream) {
+      if (
+        !stream ||
+        !stream.getTracks
+      ) {
+        return;
+      }
+
+      stream
+        .getTracks()
+        .forEach(
+          function(track) {
+            try {
+              track.stop();
+            } catch (err) {}
+          }
+        );
     }
 
     function stopMediaTracks() {
-      const stopped = new Set();
+      const stopped =
+        new Set();
 
-      [state.recordingStream, state.stream].forEach(function(stream) {
-        if (!stream || !stream.getTracks) return;
-        stream.getTracks().forEach(function(track) {
-          if (!track || stopped.has(track.id)) return;
-          stopped.add(track.id);
-          try { track.stop(); } catch (err) {}
-        });
-      });
+      [
+        state.recordingStream,
+        state.displayStream,
+        state.stream
+      ].forEach(
+        function(stream) {
+          if (
+            !stream ||
+            !stream.getTracks
+          ) {
+            return;
+          }
 
-      state.recordingStream = null;
-      state.stream = null;
+          stream
+            .getTracks()
+            .forEach(
+              function(track) {
+                if (
+                  !track ||
+                  stopped.has(track.id)
+                ) {
+                  return;
+                }
+
+                stopped.add(
+                  track.id
+                );
+
+                try {
+                  track.stop();
+                } catch (err) {}
+              }
+            );
+        }
+      );
+
+      state.recordingStream =
+        null;
+
+      state.displayStream =
+        null;
+
+      state.stream =
+        null;
     }
 
     function startTimer() {
@@ -2397,12 +2941,15 @@
     }
 
     function renderAudioDiagnostic(blob) {
-      const node = el('audioDiagnostic');
+      const node =
+        el('audioDiagnostic');
+
       node.hidden = false;
 
-      const signalText = state.signalSeen
-        ? 'Sinyal mikrofon terdeteksi saat merekam.'
-        : 'Sinyal mikrofon tidak terdeteksi dengan cukup kuat.';
+      const signalText =
+        state.signalSeen
+          ? 'Sinyal audio terdeteksi saat merekam.'
+          : 'Sinyal audio tidak terdeteksi dengan cukup kuat.';
 
       const levelLabel =
         state.signalLevel === 'good'
@@ -2415,30 +2962,67 @@
 
       const profileLabel =
         el('audioProfile') &&
-        el('audioProfile').selectedOptions[0]
-          ? el('audioProfile').selectedOptions[0].textContent
+        el('audioProfile')
+          .selectedOptions[0]
+          ? el('audioProfile')
+              .selectedOptions[0]
+              .textContent
+          : '-';
+
+      const sourceLabel =
+        el('audioSourceMode') &&
+        el('audioSourceMode')
+          .selectedOptions[0]
+          ? el('audioSourceMode')
+              .selectedOptions[0]
+              .textContent
           : '-';
 
       const trackInfo =
         state.mediaMime
-          ? 'Codec: ' + state.mediaMime + '. '
+          ? (
+              'Codec: ' +
+              state.mediaMime +
+              '. '
+            )
           : '';
 
       node.className =
         'audio-diagnostic ' +
-        (state.signalSeen ? 'ok' : 'warn');
+        (
+          state.signalSeen
+            ? 'ok'
+            : 'warn'
+        );
 
       node.textContent =
-        (state.signalSeen ? '✓ ' : '⚠️ ') +
+        (
+          state.signalSeen
+            ? '✓ '
+            : '⚠️ '
+        ) +
         signalText +
         ' Level: ' +
         levelLabel +
-        '. Profil: ' +
-        profileLabel +
+        '. Sumber: ' +
+        sourceLabel +
+        (
+          state.sourceMode === 'system'
+            ? '. Profil mikrofon: tidak digunakan'
+            : (
+                '. Profil: ' +
+                profileLabel
+              )
+        ) +
         '. ' +
         trackInfo +
         'Ukuran audio: ' +
-        formatBytes(blob && blob.size ? blob.size : 0) +
+        formatBytes(
+          blob &&
+          blob.size
+            ? blob.size
+            : 0
+        ) +
         '.';
     }
 
@@ -2697,7 +3281,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.2',
+        version:'3.0.2.3',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
