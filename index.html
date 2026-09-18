@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.4.2</title>
+  <title>Perekam Notulen Rapat v3.0.2.6</title>
 
   <style>
     :root {
@@ -564,7 +564,7 @@
     }
   
     /* =========================================================
-       v3.0.2.4.2 — MOBILE RECORDER UX REDESIGN
+       v3.0.2.6 — MOBILE RECORDER UX REDESIGN
        ========================================================= */
     .mobile-settings-toggle,.mobile-bottom-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
     @media (max-width:640px){
@@ -599,7 +599,7 @@
 
   
     /* =========================================================
-       v3.0.2.4.2 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
+       v3.0.2.6 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
        ========================================================= */
     .transcription-mode-notice {
       margin:0 0 8px;
@@ -697,7 +697,7 @@
 
   
     /* =========================================================
-       v3.0.2.4.2 — MOBILE LIVE TRANSCRIPTION RECOVERY
+       v3.0.2.6 — MOBILE LIVE TRANSCRIPTION RECOVERY
        ========================================================= */
     .transcription-health {
       display:flex;
@@ -740,6 +740,133 @@
       .transcription-retry-btn { width:100%; min-height:40px; font-size:8px; }
     }
 
+  
+    /* =========================================================
+       v3.0.2.6 — HYBRID / NEAR-LIVE TRANSCRIPTION
+       ========================================================= */
+    .transcription-health.hybrid {
+      border-color:#a7f3d0; background:linear-gradient(135deg,#ecfdf5,#f0fdfa); color:#065f46;
+    }
+    .transcription-health.processing {
+      border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8;
+    }
+    @media (max-width:640px) {
+      .transcription-mode-notice.hybrid { border-color:#a7f3d0; background:#ecfdf5; color:#065f46; }
+    }
+
+  
+    /* =========================================================
+       v3.0.2.6 — AUDIO BACKUP -> TRANSCRIPT
+       ========================================================= */
+    .backup-transcription-panel {
+      margin:10px 0;
+      padding:11px;
+      border:1px solid #bfdbfe;
+      border-radius:13px;
+      background:linear-gradient(135deg,#eff6ff,#f0fdfa);
+    }
+
+    .backup-transcription-head strong {
+      display:block;
+      color:#164e63;
+      font-size:10px;
+    }
+
+    .backup-transcription-head small {
+      display:block;
+      margin-top:4px;
+      color:#64748b;
+      font-size:7.5px;
+      line-height:1.45;
+    }
+
+    .backup-transcription-controls {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:end;
+      gap:8px;
+      margin-top:9px;
+    }
+
+    .backup-transcription-controls label span {
+      display:block;
+      margin-bottom:4px;
+      color:#475569;
+      font-size:7px;
+      font-weight:800;
+    }
+
+    .backup-transcription-controls select {
+      width:100%;
+      min-height:38px;
+      padding:7px 9px;
+      border:1px solid #cbd5e1;
+      border-radius:9px;
+      background:#fff;
+      color:#334155;
+      font-size:8px;
+    }
+
+    .btn-ai {
+      min-height:38px;
+      border-color:#2563eb !important;
+      background:linear-gradient(135deg,#2563eb,#0f766e) !important;
+      color:#fff !important;
+    }
+
+    .backup-transcription-status {
+      margin-top:8px;
+      padding:7px 8px;
+      border-radius:9px;
+      background:rgba(255,255,255,.72);
+      color:#64748b;
+      font-size:7px;
+      line-height:1.4;
+    }
+
+    .backup-transcription-status.processing {
+      background:#eff6ff;
+      color:#1d4ed8;
+    }
+
+    .backup-transcription-status.success {
+      background:#ecfdf5;
+      color:#166534;
+    }
+
+    .backup-transcription-status.error {
+      background:#fff1f2;
+      color:#b91c1c;
+    }
+
+    @media (max-width:640px) {
+      .backup-transcription-panel {
+        padding:10px;
+      }
+
+      .backup-transcription-head strong {
+        font-size:9px;
+      }
+
+      .backup-transcription-head small {
+        font-size:7px;
+      }
+
+      .backup-transcription-controls {
+        grid-template-columns:1fr;
+      }
+
+      .backup-transcription-controls select,
+      .backup-transcription-controls .btn {
+        width:100%;
+        min-height:41px;
+      }
+
+      .backup-transcription-status {
+        font-size:7px;
+      }
+    }
+
   </style>
 </head>
 
@@ -755,7 +882,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.4.2</div>
+        <div class="version">v3.0.2.6</div>
       </div>
 
       <div class="meeting-card">
@@ -899,7 +1026,7 @@
       <div id="transcriptionHealth" class="transcription-health waiting">
         <div class="transcription-health-copy">
           <strong id="transcriptionHealthTitle">Menunggu perekaman</strong>
-          <small id="transcriptionHealthDetail">Speech Recognition akan diperiksa saat sesi dimulai.</small>
+          <small id="transcriptionHealthDetail">Mobile akan memakai Hybrid Near-Live AI bila backend tersedia; jika tidak, Speech Recognition browser menjadi fallback.</small>
         </div>
         <button type="button" id="btnEnableTranscription" class="transcription-retry-btn" hidden>
           🎙 Aktifkan Transkripsi
@@ -934,6 +1061,45 @@
 
       <div id="audioDiagnostic" class="audio-diagnostic" hidden></div>
 
+
+      <div id="backupTranscriptionPanel" class="backup-transcription-panel">
+        <div class="backup-transcription-head">
+          <div>
+            <strong>✨ Buat Transkrip dari Audio Cadangan</strong>
+            <small>
+              Direkomendasikan bila Transkripsi Live di HP kosong.
+              File rekaman diproses langsung—tidak perlu diputar melalui speaker.
+            </small>
+          </div>
+        </div>
+
+        <div class="backup-transcription-controls">
+          <label>
+            <span>Hasil transkrip</span>
+            <select id="backupTranscriptMode">
+              <option value="replace">Ganti transkrip dengan hasil audio</option>
+              <option value="append">Tambahkan ke transkrip yang ada</option>
+            </select>
+          </label>
+
+          <button
+            type="button"
+            id="btnTranscribeBackup"
+            class="btn btn-ai"
+            disabled
+          >
+            ✨ Transkripsikan Audio
+          </button>
+        </div>
+
+        <div
+          id="backupTranscriptionStatus"
+          class="backup-transcription-status"
+        >
+          Rekam audio terlebih dahulu.
+        </div>
+      </div>
+
       <div class="audio-actions">
         <button type="button" id="btnTestPlayback" class="btn btn-primary" disabled>
           🔊 Tes Suara Rekaman
@@ -954,7 +1120,7 @@
     </section>
 
     <div id="recorderFootNote" class="foot-note">
-      Audio cadangan v3.0.2.4.2 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.6 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -1066,7 +1232,27 @@
       speechLastError:'',
       speechStartReason:'',
       speechWatchdogTimer:null,
-      speechResultWatchdogTimer:null
+      speechResultWatchdogTimer:null,
+      hybridCapabilityKnown:false,
+      hybridAvailable:false,
+      hybridEnabled:false,
+      hybridModel:'',
+      hybridChunkMs:10000,
+      hybridRecorder:null,
+      hybridStream:null,
+      hybridChunkTimer:null,
+      hybridChunkParts:[],
+      hybridQueue:[],
+      hybridInFlight:null,
+      hybridSequence:0,
+      hybridFailures:0,
+      hybridSuccesses:0,
+      hybridFlushOnStop:false,
+
+      backupTranscriptionAvailable:false,
+      backupTranscriptionMaxBytes:12000000,
+      backupTranscriptionBusy:false,
+      backupTranscriptionRequestId:''
     };
 
     function init() {
@@ -1079,6 +1265,7 @@
       el('btnClose').addEventListener('click', closeRecorder);
       el('btnTestPlayback').addEventListener('click', testPlayback);
       el('btnDownloadAudio').addEventListener('click', downloadAudio);
+      el('btnTranscribeBackup').addEventListener('click', transcribeBackupAudio_);
       el('btnClearBackup').addEventListener('click', clearCurrentBackup);
       el('btnRecover').addEventListener('click', recoverPreviousSession);
       el('btnDiscardRecovery').addEventListener('click', discardRecovery);
@@ -1109,11 +1296,11 @@
       window.addEventListener(
         'pagehide',
         function() {
-          notify({
-            type:'NOTULEN_RECORDER_CLOSED'
-          });
+          notify({ type:'NOTULEN_RECORDER_CLOSED' });
         }
       );
+
+      window.addEventListener('message',handleParentMessage_);
 
       initRecognition();
       updateCapabilityChips();
@@ -1123,9 +1310,11 @@
       checkRecovery();
       initMobileRecorderUI();
 
+      if(isMobileRecorder_())setTranscriptionHealth_('waiting','Memeriksa Hybrid Near-Live AI…','Menunggu konfirmasi backend aplikasi utama.',false);
+
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.4.2',
+        version:'3.0.2.6',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -1136,6 +1325,226 @@
         recoveryAvailable:
           Boolean(state.recoveryMeta)
       });
+    }
+
+    function handleParentMessage_(event) {
+      if (parentOrigin !== '*' && event.origin !== parentOrigin) return;
+      if (window.opener && event.source !== window.opener) return;
+      const data=event.data||{};
+      if(!data||typeof data!=='object')return;
+
+      if(data.type==='NOTULEN_HYBRID_TRANSCRIBE_CAPABILITY'){
+        state.hybridCapabilityKnown=true;
+        state.hybridAvailable=Boolean(data.enabled);
+        state.backupTranscriptionAvailable =
+          Boolean(
+            data.backupTranscriptionEnabled
+          );
+
+        state.backupTranscriptionMaxBytes =
+          Math.max(
+            100000,
+            Number(
+              data.backupMaxBytes ||
+              12000000
+            )
+          );
+
+        updateBackupTranscriptionUI_();
+
+        const seconds=Number(data.chunkSeconds||10);
+        state.hybridChunkMs=Math.max(5000,Math.min(30000,Math.round(seconds*1000)));
+        updateTranscriptionModeNotice_();
+        if(state.hybridAvailable&&isMobileRecorder_()){
+          setTranscriptionHealth_('hybrid','Hybrid Near-Live AI siap','Audio akan ditranskripsikan per sekitar '+Math.round(state.hybridChunkMs/1000)+' detik melalui backend GAS. API key tetap aman di server.',false);
+          if(state.sessionActive&&!state.paused&&!state.stopping)startPreferredTranscription_();
+        }
+        return;
+      }
+
+      if(data.type==='NOTULEN_BACKUP_TRANSCRIBE_RESULT'){
+        handleBackupTranscriptionResult_(data);
+        return;
+      }
+
+      if(data.type==='NOTULEN_HYBRID_TRANSCRIBE_RESULT')handleHybridTranscriptionResult_(data);
+    }
+
+    function shouldUseHybridTranscription_(){
+      return Boolean(isMobileRecorder_()&&state.hybridAvailable&&(state.sourceMode==='mic'||state.sourceMode==='media'));
+    }
+
+    function startPreferredTranscription_(){
+      if(shouldUseHybridTranscription_()){startHybridTranscription_();return;}
+      state.hybridEnabled=false;
+      if(state.sourceMode!=='system'){
+        state.shouldRestartRecognition=true;
+        startRecognition();
+      }
+    }
+
+    function startHybridTranscription_(){
+      if(!shouldUseHybridTranscription_()||!state.sessionActive||state.paused||state.stopping)return;
+      if(state.hybridEnabled)return;
+      state.hybridEnabled=true;
+      state.hybridFailures=0;
+      state.shouldRestartRecognition=false;
+      clearRecognitionRestartTimer();
+      if(state.recognition&&state.recognitionListening){try{state.recognition.stop();}catch(err){}}
+      setChip('speechChip','ok','✨ Near-Live AI aktif');
+      el('transcriptBadge').textContent='AI Near-Live';
+      el('transcriptBadge').className='badge active';
+      setTranscriptionHealth_('hybrid','Hybrid Near-Live AI aktif','Audio diproses per sekitar '+Math.round(state.hybridChunkMs/1000)+' detik. Teks akan muncul bertahap.',false);
+      updateTranscriptionModeNotice_();
+      beginHybridChunk_();
+    }
+
+    function stopHybridTranscription_(flush){
+      const wasEnabled=state.hybridEnabled;
+      state.hybridEnabled=false;
+      state.hybridFlushOnStop=Boolean(flush);
+      if(state.hybridChunkTimer){clearTimeout(state.hybridChunkTimer);state.hybridChunkTimer=null;}
+      if(state.hybridRecorder&&state.hybridRecorder.state!=='inactive'){
+        try{state.hybridRecorder.stop();}catch(err){cleanupHybridStream_();if(!flush)state.hybridFlushOnStop=false;}
+      }else{
+        cleanupHybridStream_(); if(!flush)state.hybridFlushOnStop=false;
+      }
+      return wasEnabled;
+    }
+
+    function cleanupHybridStream_(){
+      if(state.hybridStream&&state.hybridStream.getTracks){
+        state.hybridStream.getTracks().forEach(function(track){try{track.stop();}catch(err){}});
+      }
+      state.hybridStream=null;state.hybridRecorder=null;state.hybridChunkParts=[];
+    }
+
+    function createHybridStream_(){
+      const source=state.recordingStream||state.stream;
+      if(!source||!source.getAudioTracks)return null;
+      const tracks=source.getAudioTracks(); if(!tracks.length)return null;
+      const cloned=[];
+      tracks.forEach(function(track){try{cloned.push(track.clone());}catch(err){}});
+      return cloned.length?new MediaStream(cloned):null;
+    }
+
+    function beginHybridChunk_(){
+      if(!state.hybridEnabled||!state.sessionActive||state.paused||state.stopping)return;
+      const stream=createHybridStream_();
+      if(!stream){handleHybridLocalFailure_('Stream audio untuk near-live tidak tersedia.');return;}
+      state.hybridStream=stream;state.hybridChunkParts=[];
+      const preferred=(state.mediaMime||chooseAudioMimeType()||'audio/webm').split(';')[0];
+      let recorder;
+      try{recorder=new MediaRecorder(stream,{mimeType:preferred,audioBitsPerSecond:64000});}
+      catch(err){try{recorder=new MediaRecorder(stream);}catch(fallbackErr){cleanupHybridStream_();handleHybridLocalFailure_('Browser gagal membuat recorder near-live.');return;}}
+      state.hybridRecorder=recorder;
+      recorder.ondataavailable=function(event){if(event.data&&event.data.size)state.hybridChunkParts.push(event.data);};
+      recorder.onerror=function(){handleHybridLocalFailure_('Recorder near-live mengalami kesalahan.');};
+      recorder.onstop=finalizeHybridChunk_;
+      try{recorder.start();}catch(err){cleanupHybridStream_();handleHybridLocalFailure_('Recorder near-live tidak dapat dimulai.');return;}
+      state.hybridChunkTimer=setTimeout(function(){
+        state.hybridChunkTimer=null;
+        if(state.hybridRecorder&&state.hybridRecorder.state!=='inactive'){
+          try{state.hybridRecorder.stop();}catch(err){cleanupHybridStream_();}
+        }
+      },state.hybridChunkMs);
+    }
+
+    async function finalizeHybridChunk_(){
+      if(state.hybridChunkTimer){clearTimeout(state.hybridChunkTimer);state.hybridChunkTimer=null;}
+      const parts=state.hybridChunkParts.slice();
+      const mime=state.hybridRecorder&&state.hybridRecorder.mimeType?state.hybridRecorder.mimeType:(state.mediaMime||'audio/webm');
+      const shouldQueue=Boolean(state.hybridEnabled||state.hybridFlushOnStop);
+      const flush=state.hybridFlushOnStop;
+      cleanupHybridStream_();state.hybridFlushOnStop=false;
+      if(parts.length&&shouldQueue){
+        const blob=new Blob(parts,{type:mime});
+        if(blob.size>900)await queueHybridChunk_(blob);
+      }
+      if(state.hybridEnabled&&state.sessionActive&&!state.paused&&!state.stopping)setTimeout(beginHybridChunk_,120);
+      else if(flush)pumpHybridQueue_();
+    }
+
+    function blobToBase64_(blob){
+      return new Promise(function(resolve,reject){
+        const reader=new FileReader();
+        reader.onerror=function(){reject(new Error('Gagal membaca audio near-live.'));};
+        reader.onload=function(){const result=String(reader.result||'');const comma=result.indexOf(',');resolve(comma>=0?result.slice(comma+1):result);};
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function queueHybridChunk_(blob){
+      let audioBase64='';
+      try{audioBase64=await blobToBase64_(blob);}catch(err){handleHybridLocalFailure_(err.message||'Gagal menyiapkan audio near-live.');return;}
+      if(!audioBase64)return;
+      state.hybridSequence+=1;
+      const item={
+        requestId:state.sessionId+'-AI-'+state.hybridSequence+'-'+Date.now(),
+        sessionId:state.sessionId,sequence:state.hybridSequence,language:language,
+        mimeType:blob.type||state.mediaMime||'audio/webm',audioBase64:audioBase64,
+        contextTail:el('transcript').value.trim().slice(-600)
+      };
+      if(state.hybridQueue.length>=6){state.hybridQueue.shift();show('Antrean transkripsi near-live penuh. Potongan tertua dilewati; audio utama tetap aman.','info');}
+      state.hybridQueue.push(item);pumpHybridQueue_();
+    }
+
+    function pumpHybridQueue_(){
+      if(state.hybridInFlight||!state.hybridQueue.length)return;
+      const item=state.hybridQueue.shift();state.hybridInFlight=item;
+      setTranscriptionHealth_('processing','AI sedang mentranskripsikan audio…','Memproses potongan '+item.sequence+'. Audio cadangan utama tetap berjalan.',false);
+      notify({
+        type:'NOTULEN_HYBRID_TRANSCRIBE_REQUEST',requestId:item.requestId,sessionId:item.sessionId,
+        sequence:item.sequence,language:item.language,mimeType:item.mimeType,audioBase64:item.audioBase64,contextTail:item.contextTail
+      });
+    }
+
+    function appendHybridTranscript_(text){
+      text=String(text||'').trim();if(!text)return;
+      const current=el('transcript').value.trim();
+      const tail=current.slice(-500).toLowerCase(),candidate=text.toLowerCase();
+      if(candidate.length>12&&tail.endsWith(candidate))return;
+      el('transcript').value=current?current+'\n'+text:text;
+      el('transcript').scrollTop=el('transcript').scrollHeight;
+      persistTranscript();
+    }
+
+    function handleHybridTranscriptionResult_(data){
+      const current=state.hybridInFlight;
+      if(!current||(data.requestId&&data.requestId!==current.requestId))return;
+      state.hybridInFlight=null;
+      if(data.success){
+        state.hybridFailures=0;state.hybridSuccesses+=1;if(data.model)state.hybridModel=String(data.model);
+        const text=String(data.text||'').trim();
+        if(text){
+          appendHybridTranscript_(text);
+          el('interim').textContent='AI near-live: transkrip terbaru sudah diterima.';
+          setTranscriptionHealth_('hybrid','Transkripsi Near-Live AI aktif','Teks potongan '+current.sequence+' diterima'+(data.processingMs?' • '+data.processingMs+' ms':'')+'.',false);
+          setChip('speechChip','ok','✨ AI near-live aktif');
+        }else{
+          setTranscriptionHealth_('hybrid','Near-Live AI menunggu ucapan','Potongan audio diproses, tetapi tidak ditemukan ucapan yang cukup jelas.',false);
+        }
+        pumpHybridQueue_();return;
+      }
+      state.hybridFailures+=1;
+      setTranscriptionHealth_('warn','Near-Live AI belum berhasil',String(data.message||'Backend transkripsi gagal.'),false);
+      if(state.hybridFailures>=2&&state.sessionActive&&!state.paused&&!state.stopping){
+        stopHybridTranscription_(false);
+        if(state.speechSupported&&state.sourceMode!=='system'){
+          setChip('speechChip','warn','📝 Fallback Speech Recognition');
+          setTranscriptionHealth_('warn','AI near-live gagal • mencoba engine browser','Audio cadangan tetap aman. Speech Recognition browser digunakan sebagai fallback.',false);
+          state.shouldRestartRecognition=true;startRecognition();
+        }
+      }
+      pumpHybridQueue_();
+    }
+
+    function handleHybridLocalFailure_(message){
+      state.hybridFailures+=1;
+      setTranscriptionHealth_('warn','Near-Live recorder bermasalah',message||'Audio cadangan utama tetap berjalan.',false);
+      if(state.hybridFailures>=2&&state.sessionActive&&state.speechSupported){
+        stopHybridTranscription_(false);state.shouldRestartRecognition=true;startRecognition();
+      }
     }
 
     function isMobileRecorder_() {
@@ -1428,6 +1837,12 @@
     }
 
     function startRecognitionFromUserGesture_(reason) {
+      if (shouldUseHybridTranscription_() && state.sessionActive && !state.paused && !state.stopping) {
+        if (!state.hybridEnabled) startHybridTranscription_();
+        else setTranscriptionHealth_('hybrid','Hybrid Near-Live AI aktif','Audio sedang diproses bertahap melalui backend GAS.',false);
+        return;
+      }
+
       if (
         !state.sessionActive ||
         state.paused ||
@@ -1698,6 +2113,7 @@
         clearSpeechResultWatchdog_();
 
         if (
+          !state.hybridEnabled &&
           state.sessionActive &&
           !state.paused &&
           !state.stopping &&
@@ -1818,6 +2234,13 @@
       state.speechResultCount = 0;
       state.speechLastError = '';
       state.speechStartReason = '';
+
+      stopHybridTranscription_(false);
+      state.hybridQueue=[];
+      state.hybridInFlight=null;
+      state.hybridSequence=0;
+      state.hybridFailures=0;
+      state.hybridSuccesses=0;
 
       clearSpeechWatchdog_();
       clearSpeechResultWatchdog_();
@@ -2140,27 +2563,13 @@
         if (
           sourceMode !== 'system'
         ) {
-          startRecognition();
+          startPreferredTranscription_();
         } else {
-          state.shouldRestartRecognition =
-            false;
-
-          setChip(
-            'speechChip',
-            'warn',
-            '📝 Audio Sistem: transkripsi live tidak tersedia'
-          );
-
-          el('transcriptBadge')
-            .textContent =
-            'Audio saja';
-
-          el('transcriptBadge')
-            .className =
-            'badge';
-
-          el('interim').textContent =
-            'Audio Tab/Sistem direkam secara digital. Web Speech Recognition tidak dapat menerima stream audio sistem secara langsung.';
+          state.shouldRestartRecognition = false;
+          setChip('speechChip','warn','📝 Audio Sistem: transkripsi near-live tidak tersedia');
+          el('transcriptBadge').textContent='Audio saja';
+          el('transcriptBadge').className='badge';
+          el('interim').textContent='Audio Tab/Sistem direkam secara digital. Pada HP mode ini umumnya tidak didukung untuk near-live.';
         }
 
         setStatus(
@@ -2274,16 +2683,10 @@
 
       await requestWakeLock();
 
-      if (
-        state.sourceMode !== 'system'
-      ) {
-        state.shouldRestartRecognition =
-          true;
-
-        startRecognition();
+      if (state.sourceMode !== 'system') {
+        startPreferredTranscription_();
       } else {
-        state.shouldRestartRecognition =
-          false;
+        state.shouldRestartRecognition=false;
       }
 
       persistRecoveryMeta(
@@ -2320,6 +2723,8 @@
       state.shouldRestartRecognition = false;
 
       clearRecognitionRestartTimer();
+
+      if (state.hybridEnabled) stopHybridTranscription_(true);
 
       if (
         state.recognition &&
@@ -2383,6 +2788,8 @@
       state.shouldRestartRecognition = false;
 
       clearRecognitionRestartTimer();
+
+      if (state.hybridEnabled) stopHybridTranscription_(true);
 
       if (
         state.recognition &&
@@ -2531,17 +2938,14 @@
 
         await requestWakeLock();
 
-        if (
-          state.recognitionInterrupted &&
-          !state.paused &&
-          !state.stopping
+        if (state.hybridEnabled) {
+          // Hybrid near-live does not need native SpeechRecognition restart.
+        } else if (
+          state.recognitionInterrupted && !state.paused && !state.stopping
         ) {
           scheduleRecognitionRestart();
         } else if (
-          state.speechSupported &&
-          !state.recognitionListening &&
-          !state.paused &&
-          !state.stopping
+          state.speechSupported && !state.recognitionListening && !state.paused && !state.stopping
         ) {
           scheduleRecognitionRestart();
         }
@@ -2655,6 +3059,7 @@
       el('audioProfile').disabled = false;
       state.shouldRestartRecognition = false;
 
+      stopHybridTranscription_(false);
       clearSpeechWatchdog_();
       clearSpeechResultWatchdog_();
 
@@ -3100,51 +3505,32 @@
     }
 
     function updateTranscriptionModeNotice_() {
-      const node = el('transcriptionModeNotice');
-      if (!node) return;
+      const node=el('transcriptionModeNotice'); if(!node)return;
+      const mode=(el('audioSourceMode')&&el('audioSourceMode').value)||state.sourceMode||'mic';
+      node.className='transcription-mode-notice';
 
-      const mode =
-        (el('audioSourceMode') && el('audioSourceMode').value) ||
-        state.sourceMode ||
-        'mic';
-
-      node.className = 'transcription-mode-notice';
-
-      if (!state.speechSupported) {
+      if(state.hybridEnabled&&(mode==='mic'||mode==='media')){
+        node.classList.add('hybrid');
+        node.textContent='✨ Hybrid Near-Live AI aktif: audio mikrofon dipotong secara aman dan ditranskripsikan melalui backend GAS.';
+        return;
+      }
+      if(mode==='system'){
         node.classList.add('warn');
-        node.textContent =
-          'Transkripsi Live tidak tersedia pada browser ini. Audio cadangan tetap dapat digunakan.';
+        node.textContent='Audio Tab/Sistem direkam secara digital. Pada HP mode ini biasanya tidak tersedia untuk near-live.';
         return;
       }
-
-      if (mode === 'system') {
-        node.classList.add('warn');
-        node.textContent =
-          'Mode Audio Tab / Sistem merekam audio digital, tetapi Web Speech Recognition tidak dapat menerima stream sistem secara langsung. Mode ini adalah audio saja.';
-        return;
-      }
-
-      if (mode === 'mixed') {
+      if(mode==='mixed'){
         node.classList.add('info');
-
-        node.textContent =
-          isMobileRecorder_()
-            ? 'Mode Campuran Mic + Audio Tab umumnya tidak tersedia pada browser HP. Gunakan Suara Rapat/Mikrofon atau Speaker Melalui Mikrofon untuk Transkripsi Live.'
-            : 'Mode Campuran merekam Mic + Audio Tab. Transkripsi Live tetap mendengarkan mikrofon; audio tab/sistem tidak ditranskrip langsung.';
-
+        node.textContent=isMobileRecorder_()?'Mode Campuran Mic + Audio Tab umumnya tidak tersedia pada browser HP. Gunakan Suara Rapat/Mikrofon atau Speaker Melalui Mikrofon.':'Mode Campuran merekam Mic + Audio Tab. Native Web Speech tetap mendengarkan mikrofon.';
         return;
       }
-
-      if (mode === 'media') {
+      if(mode==='media'){
         node.classList.add('info');
-        node.textContent =
-          'Transkripsi Live mendengarkan mikrofon. Gunakan mode ini bila suara YouTube/Meet diputar melalui speaker dan terdengar oleh mikrofon.';
+        node.textContent=state.hybridAvailable&&isMobileRecorder_()?'Hybrid Near-Live AI siap. Putar suara melalui speaker agar tertangkap mikrofon.':'Transkripsi Live mendengarkan mikrofon. Gunakan mode ini bila suara speaker terdengar oleh mikrofon.';
         return;
       }
-
       node.classList.add('ok');
-      node.textContent =
-        'Transkripsi Live mendengarkan mikrofon perangkat dan mengirim kalimat final ke Form Notulen.';
+      node.textContent=state.hybridAvailable&&isMobileRecorder_()?'Hybrid Near-Live AI siap untuk mikrofon. Audio cadangan utama tetap disimpan lokal.':'Transkripsi Live mendengarkan mikrofon perangkat dan mengirim kalimat final ke Form Notulen.';
     }
 
     function updateAudioSourceHelp() {
@@ -3610,6 +3996,285 @@
       return value;
     }
 
+
+    function updateBackupTranscriptionUI_() {
+      const button =
+        el('btnTranscribeBackup');
+
+      const status =
+        el('backupTranscriptionStatus');
+
+      if (!button || !status) return;
+
+      if (state.backupTranscriptionBusy) {
+        button.disabled = true;
+        button.textContent = '⏳ Memproses Audio…';
+        return;
+      }
+
+      button.textContent =
+        '✨ Transkripsikan Audio';
+
+      if (
+        !state.audioBlob ||
+        !state.audioBlob.size
+      ) {
+        button.disabled = true;
+        status.className =
+          'backup-transcription-status';
+        status.textContent =
+          'Rekam audio terlebih dahulu.';
+        return;
+      }
+
+      if (
+        state.audioBlob.size >
+        state.backupTranscriptionMaxBytes
+      ) {
+        button.disabled = true;
+        status.className =
+          'backup-transcription-status error';
+        status.textContent =
+          'Audio terlalu besar untuk transkripsi langsung (' +
+          formatBytes(
+            state.audioBlob.size
+          ) +
+          '). Batas saat ini ' +
+          formatBytes(
+            state.backupTranscriptionMaxBytes
+          ) +
+          '.';
+        return;
+      }
+
+      if (!state.backupTranscriptionAvailable) {
+        button.disabled = false;
+        status.className =
+          'backup-transcription-status';
+        status.textContent =
+          'Audio siap. Jika tombol gagal, buka perekam dari Form Notulen dan pastikan Gemini API Key aktif.';
+        return;
+      }
+
+      button.disabled = false;
+      status.className =
+        'backup-transcription-status success';
+      status.textContent =
+        'Audio siap ditranskripsikan langsung dari file cadangan (' +
+        formatBytes(
+          state.audioBlob.size
+        ) +
+        ').';
+    }
+
+    async function transcribeBackupAudio_() {
+      if (state.backupTranscriptionBusy) {
+        return;
+      }
+
+      if (
+        !state.audioBlob ||
+        !state.audioBlob.size
+      ) {
+        show(
+          'Audio cadangan belum tersedia.',
+          'info'
+        );
+        return;
+      }
+
+      if (
+        state.audioBlob.size >
+        state.backupTranscriptionMaxBytes
+      ) {
+        show(
+          'Audio terlalu besar untuk transkripsi langsung. Batas saat ini ' +
+          formatBytes(
+            state.backupTranscriptionMaxBytes
+          ) +
+          '.',
+          'error'
+        );
+        return;
+      }
+
+      state.backupTranscriptionBusy = true;
+      updateBackupTranscriptionUI_();
+
+      const status =
+        el('backupTranscriptionStatus');
+
+      status.className =
+        'backup-transcription-status processing';
+
+      status.textContent =
+        'Menyiapkan Audio Cadangan untuk transkripsi…';
+
+      let audioBase64 = '';
+
+      try {
+        audioBase64 =
+          await blobToBase64_(
+            state.audioBlob
+          );
+      } catch (err) {
+        state.backupTranscriptionBusy = false;
+
+        status.className =
+          'backup-transcription-status error';
+
+        status.textContent =
+          'Gagal membaca Audio Cadangan: ' +
+          (
+            err && err.message
+              ? err.message
+              : err
+          );
+
+        updateBackupTranscriptionUI_();
+        return;
+      }
+
+      state.backupTranscriptionRequestId =
+        (
+          state.sessionId ||
+          'REC'
+        ) +
+        '-BACKUP-' +
+        Date.now();
+
+      status.textContent =
+        'Audio dikirim ke backend untuk ditranskripsikan. Jangan tutup perekam…';
+
+      notify({
+        type:
+          'NOTULEN_BACKUP_TRANSCRIBE_REQUEST',
+        requestId:
+          state.backupTranscriptionRequestId,
+        sessionId:
+          state.sessionId,
+        language:
+          language,
+        mimeType:
+          state.audioBlob.type ||
+          state.mediaMime ||
+          'audio/webm',
+        audioBase64:
+          audioBase64,
+        mergeMode:
+          el('backupTranscriptMode').value ||
+          'replace'
+      });
+    }
+
+    function handleBackupTranscriptionResult_(data) {
+      if (
+        !state.backupTranscriptionRequestId ||
+        (
+          data.requestId &&
+          data.requestId !==
+            state.backupTranscriptionRequestId
+        )
+      ) {
+        return;
+      }
+
+      state.backupTranscriptionBusy = false;
+      state.backupTranscriptionRequestId = '';
+
+      const status =
+        el('backupTranscriptionStatus');
+
+      if (!data.success) {
+        status.className =
+          'backup-transcription-status error';
+
+        status.textContent =
+          'Transkripsi gagal: ' +
+          String(
+            data.message ||
+            'kesalahan tidak diketahui'
+          );
+
+        updateBackupTranscriptionUI_();
+        return;
+      }
+
+      const text =
+        String(
+          data.text || ''
+        ).trim();
+
+      if (!text) {
+        status.className =
+          'backup-transcription-status';
+
+        status.textContent =
+          'Audio berhasil diproses, tetapi tidak ditemukan ucapan yang cukup jelas.';
+
+        updateBackupTranscriptionUI_();
+        return;
+      }
+
+      const mergeMode =
+        String(
+          data.mergeMode ||
+          el('backupTranscriptMode').value ||
+          'replace'
+        ).toLowerCase();
+
+      const current =
+        el('transcript')
+          .value
+          .trim();
+
+      if (
+        mergeMode === 'append' &&
+        current
+      ) {
+        el('transcript').value =
+          current +
+          '\n' +
+          text;
+      } else {
+        el('transcript').value =
+          text;
+      }
+
+      el('transcript').scrollTop =
+        el('transcript').scrollHeight;
+
+      el('interim').textContent =
+        'Transkrip dibuat dari Audio Cadangan.';
+
+      persistTranscript();
+
+      setMobilePrimaryView_(
+        'transcript'
+      );
+
+      status.className =
+        'backup-transcription-status success';
+
+      status.textContent =
+        '✓ Audio Cadangan berhasil ditranskripsikan' +
+        (
+          data.processingMs
+            ? ' • ' +
+              data.processingMs +
+              ' ms'
+            : ''
+        ) +
+        '.';
+
+      show(
+        'Transkrip berhasil dibuat dari Audio Cadangan.',
+        'success'
+      );
+
+      updateBackupTranscriptionUI_();
+    }
+
     function setAudioBlob(blob) {
       clearAudioPreview();
 
@@ -3625,6 +4290,8 @@
 
       el('btnTestPlayback').disabled = false;
       el('btnDownloadAudio').disabled = false;
+
+      updateBackupTranscriptionUI_();
     }
 
     async function testPlayback() {
@@ -3642,7 +4309,10 @@
         player.defaultMuted = false;
         player.volume = 1.0;
         await player.play();
-        show('Tes playback berjalan dengan volume player 100%. Jika masih tidak terdengar, periksa output speaker/volume tab Chrome.','success');
+        show(
+          'Tes playback berjalan. Untuk membuat teks, gunakan tombol “Transkripsikan Audio” — audio dibaca langsung dari file cadangan, bukan melalui speaker/mikrofon.',
+          'success'
+        );
       } catch (err) {
         show('Browser tidak dapat memutar audio: ' + (err && err.message ? err.message : err),'error');
       }
@@ -3751,6 +4421,11 @@
       el('btnTestPlayback').disabled = true;
       el('btnDownloadAudio').disabled = true;
       el('audioDiagnostic').hidden = true;
+
+      state.backupTranscriptionBusy = false;
+      state.backupTranscriptionRequestId = '';
+
+      updateBackupTranscriptionUI_();
     }
 
     function downloadAudio() {
@@ -3987,7 +4662,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.4.2',
+        version:'3.0.2.6',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
