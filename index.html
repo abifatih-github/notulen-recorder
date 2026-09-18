@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.6</title>
+  <title>Perekam Notulen Rapat v3.0.2.7</title>
 
   <style>
     :root {
@@ -564,7 +564,7 @@
     }
   
     /* =========================================================
-       v3.0.2.6 — MOBILE RECORDER UX REDESIGN
+       v3.0.2.7 — MOBILE RECORDER UX REDESIGN
        ========================================================= */
     .mobile-settings-toggle,.mobile-bottom-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
     @media (max-width:640px){
@@ -599,7 +599,7 @@
 
   
     /* =========================================================
-       v3.0.2.6 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
+       v3.0.2.7 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
        ========================================================= */
     .transcription-mode-notice {
       margin:0 0 8px;
@@ -697,7 +697,7 @@
 
   
     /* =========================================================
-       v3.0.2.6 — MOBILE LIVE TRANSCRIPTION RECOVERY
+       v3.0.2.7 — MOBILE LIVE TRANSCRIPTION RECOVERY
        ========================================================= */
     .transcription-health {
       display:flex;
@@ -742,7 +742,7 @@
 
   
     /* =========================================================
-       v3.0.2.6 — HYBRID / NEAR-LIVE TRANSCRIPTION
+       v3.0.2.7 — HYBRID / NEAR-LIVE TRANSCRIPTION
        ========================================================= */
     .transcription-health.hybrid {
       border-color:#a7f3d0; background:linear-gradient(135deg,#ecfdf5,#f0fdfa); color:#065f46;
@@ -756,7 +756,7 @@
 
   
     /* =========================================================
-       v3.0.2.6 — AUDIO BACKUP -> TRANSCRIPT
+       v3.0.2.7 — AUDIO BACKUP -> TRANSCRIPT
        ========================================================= */
     .backup-transcription-panel {
       margin:10px 0;
@@ -867,6 +867,84 @@
       }
     }
 
+  
+    /* =========================================================
+       v3.0.2.7 — RELIABLE POST-RECORD TRANSCRIPTION
+       ========================================================= */
+    .post-record-toggle {
+      display:flex;
+      align-items:flex-start;
+      gap:8px;
+      margin-top:10px;
+      padding:9px;
+      border:1px solid #d1fae5;
+      border-radius:10px;
+      background:#f0fdf4;
+      color:#166534;
+      cursor:pointer;
+    }
+
+    .post-record-toggle input {
+      flex:0 0 auto;
+      width:16px;
+      height:16px;
+      margin:1px 0 0;
+      accent-color:#0f766e;
+    }
+
+    .post-record-toggle strong {
+      display:block;
+      font-size:8px;
+    }
+
+    .post-record-toggle small {
+      display:block;
+      margin-top:2px;
+      color:#4b7a68;
+      font-size:7px;
+      line-height:1.35;
+    }
+
+    .manual-audio-transcription {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto auto;
+      align-items:end;
+      gap:8px;
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed #cbd5e1;
+    }
+
+    .manual-audio-copy strong {
+      display:block;
+      color:#334155;
+      font-size:8px;
+    }
+
+    .manual-audio-copy small {
+      display:block;
+      margin-top:2px;
+      color:#64748b;
+      font-size:7px;
+    }
+
+    .manual-audio-transcription input[type=file] {
+      max-width:220px;
+      font-size:7px;
+    }
+
+    @media (max-width:640px) {
+      .manual-audio-transcription {
+        grid-template-columns:1fr;
+      }
+
+      .manual-audio-transcription input[type=file],
+      .manual-audio-transcription .btn {
+        width:100%;
+        max-width:100%;
+      }
+    }
+
   </style>
 </head>
 
@@ -882,7 +960,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.6</div>
+        <div class="version">v3.0.2.7</div>
       </div>
 
       <div class="meeting-card">
@@ -1098,6 +1176,37 @@
         >
           Rekam audio terlebih dahulu.
         </div>
+
+
+        <label class="post-record-toggle">
+          <input type="checkbox" id="autoTranscribeAfterStop" checked>
+          <span>
+            <strong>Otomatis transkripsikan setelah Selesai</strong>
+            <small>Disarankan untuk HP. Audio diproses setelah rekaman selesai.</small>
+          </span>
+        </label>
+
+        <div class="manual-audio-transcription">
+          <div class="manual-audio-copy">
+            <strong>Atau pilih file audio</strong>
+            <small>Untuk rekaman yang sudah diunduh atau file audio lain.</small>
+          </div>
+
+          <input
+            type="file"
+            id="manualAudioFile"
+            accept="audio/*,.webm,.ogg,.mp3,.wav,.m4a,.aac,.flac"
+          >
+
+          <button
+            type="button"
+            id="btnTranscribeSelectedFile"
+            class="btn"
+            disabled
+          >
+            ✨ Transkripsikan File Pilihan
+          </button>
+        </div>
       </div>
 
       <div class="audio-actions">
@@ -1120,7 +1229,7 @@
     </section>
 
     <div id="recorderFootNote" class="foot-note">
-      Audio cadangan v3.0.2.6 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.7 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -1252,12 +1361,27 @@
       backupTranscriptionAvailable:false,
       backupTranscriptionMaxBytes:12000000,
       backupTranscriptionBusy:false,
-      backupTranscriptionRequestId:''
+      backupTranscriptionRequestId:'',
+      mobilePostRecordMode:false,
+      autoTranscribeAfterStop:true,
+      manualAudioFile:null
     };
 
     function init() {
       el('meetingName').textContent = meeting;
       el('languageLabel').textContent = language;
+
+      try {
+        const storedAuto =
+          localStorage.getItem('notulenAutoTranscribeAfterStop');
+
+        if (storedAuto !== null) {
+          state.autoTranscribeAfterStop = storedAuto !== '0';
+        }
+      } catch (err) {}
+
+      el('autoTranscribeAfterStop').checked =
+        state.autoTranscribeAfterStop;
 
       el('btnStart').addEventListener('click', startOrResumeSession);
       el('btnPause').addEventListener('click', pauseSession);
@@ -1266,6 +1390,32 @@
       el('btnTestPlayback').addEventListener('click', testPlayback);
       el('btnDownloadAudio').addEventListener('click', downloadAudio);
       el('btnTranscribeBackup').addEventListener('click', transcribeBackupAudio_);
+
+      el('autoTranscribeAfterStop').addEventListener(
+        'change',
+        function() {
+          state.autoTranscribeAfterStop =
+            Boolean(el('autoTranscribeAfterStop').checked);
+
+          try {
+            localStorage.setItem(
+              'notulenAutoTranscribeAfterStop',
+              state.autoTranscribeAfterStop ? '1' : '0'
+            );
+          } catch (err) {}
+        }
+      );
+
+      el('manualAudioFile').addEventListener(
+        'change',
+        handleManualAudioFile_
+      );
+
+      el('btnTranscribeSelectedFile').addEventListener(
+        'click',
+        transcribeSelectedAudioFile_
+      );
+
       el('btnClearBackup').addEventListener('click', clearCurrentBackup);
       el('btnRecover').addEventListener('click', recoverPreviousSession);
       el('btnDiscardRecovery').addEventListener('click', discardRecovery);
@@ -1310,11 +1460,16 @@
       checkRecovery();
       initMobileRecorderUI();
 
-      if(isMobileRecorder_())setTranscriptionHealth_('waiting','Memeriksa Hybrid Near-Live AI…','Menunggu konfirmasi backend aplikasi utama.',false);
+      if(isMobileRecorder_())setTranscriptionHealth_(
+        'waiting',
+        'Memeriksa layanan transkripsi…',
+        'Menunggu konfirmasi backend aplikasi utama.',
+        false
+      );
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.6',
+        version:'3.0.2.7',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -1340,6 +1495,28 @@
           Boolean(
             data.backupTranscriptionEnabled
           );
+
+        state.mobilePostRecordMode =
+          isMobileRecorder_() &&
+          String(data.mobileTranscriptionMode || '') === 'post-record';
+
+        if (state.mobilePostRecordMode) {
+          state.hybridAvailable = false;
+          state.hybridEnabled = false;
+
+          setChip(
+            'speechChip',
+            'ok',
+            '✨ Transkripsi setelah rekam'
+          );
+
+          setTranscriptionHealth_(
+            'hybrid',
+            'Transkripsi mobile setelah rekaman',
+            'Rekam sampai selesai. Audio Cadangan akan ditranskripsikan menggunakan model khusus speech-to-text.',
+            false
+          );
+        }
 
         state.backupTranscriptionMaxBytes =
           Math.max(
@@ -1375,6 +1552,33 @@
     }
 
     function startPreferredTranscription_(){
+      if (
+        state.mobilePostRecordMode &&
+        isMobileRecorder_()
+      ) {
+        state.hybridEnabled = false;
+        state.shouldRestartRecognition = false;
+
+        setChip(
+          'speechChip',
+          'ok',
+          '✨ Transkripsi setelah rekam'
+        );
+
+        setTranscriptionHealth_(
+          'hybrid',
+          'Rekaman audio sedang dibuat',
+          'Pada HP, transkripsi diproses dari Audio Cadangan setelah Selesai agar lebih stabil.',
+          false
+        );
+
+        el('transcriptBadge').textContent = 'Setelah Rekam';
+        el('transcriptBadge').className = 'badge active';
+        el('interim').textContent =
+          'Rekam rapat sampai selesai. Transkrip akan dibuat dari file audio asli.';
+        return;
+      }
+
       if(shouldUseHybridTranscription_()){startHybridTranscription_();return;}
       state.hybridEnabled=false;
       if(state.sourceMode!=='system'){
@@ -3098,6 +3302,7 @@
         updateMobileRecordAction_();
 
         renderAudioDiagnostic(blob);
+        maybeAutoTranscribeAfterStop_();
 
         el('audioBadge').textContent =
           'Siap • ' +
@@ -3508,6 +3713,16 @@
       const node=el('transcriptionModeNotice'); if(!node)return;
       const mode=(el('audioSourceMode')&&el('audioSourceMode').value)||state.sourceMode||'mic';
       node.className='transcription-mode-notice';
+
+      if (
+        state.mobilePostRecordMode &&
+        isMobileRecorder_()
+      ) {
+        node.classList.add('hybrid');
+        node.textContent =
+          '✨ Mode HP stabil: rekam audio terlebih dahulu, lalu transkripsi dibuat dari file Audio Cadangan setelah Selesai.';
+        return;
+      }
 
       if(state.hybridEnabled&&(mode==='mic'||mode==='media')){
         node.classList.add('hybrid');
@@ -4067,31 +4282,44 @@
         ').';
     }
 
-    async function transcribeBackupAudio_() {
-      if (state.backupTranscriptionBusy) {
+    function handleManualAudioFile_() {
+      const input = el('manualAudioFile');
+
+      state.manualAudioFile =
+        input &&
+        input.files &&
+        input.files[0]
+          ? input.files[0]
+          : null;
+
+      el('btnTranscribeSelectedFile').disabled =
+        !state.manualAudioFile;
+
+      if (state.manualAudioFile) {
+        const status = el('backupTranscriptionStatus');
+        status.className = 'backup-transcription-status success';
+        status.textContent =
+          'File dipilih: ' +
+          state.manualAudioFile.name +
+          ' • ' +
+          formatBytes(state.manualAudioFile.size);
+      }
+    }
+
+    async function transcribeAudioBlob_(blob, options) {
+      options = options || {};
+
+      if (state.backupTranscriptionBusy) return;
+
+      if (!blob || !blob.size) {
+        show('File audio belum tersedia.','info');
         return;
       }
 
-      if (
-        !state.audioBlob ||
-        !state.audioBlob.size
-      ) {
+      if (blob.size > state.backupTranscriptionMaxBytes) {
         show(
-          'Audio cadangan belum tersedia.',
-          'info'
-        );
-        return;
-      }
-
-      if (
-        state.audioBlob.size >
-        state.backupTranscriptionMaxBytes
-      ) {
-        show(
-          'Audio terlalu besar untuk transkripsi langsung. Batas saat ini ' +
-          formatBytes(
-            state.backupTranscriptionMaxBytes
-          ) +
+          'Audio terlalu besar. Batas saat ini ' +
+          formatBytes(state.backupTranscriptionMaxBytes) +
           '.',
           'error'
         );
@@ -4101,70 +4329,78 @@
       state.backupTranscriptionBusy = true;
       updateBackupTranscriptionUI_();
 
-      const status =
-        el('backupTranscriptionStatus');
-
-      status.className =
-        'backup-transcription-status processing';
-
-      status.textContent =
-        'Menyiapkan Audio Cadangan untuk transkripsi…';
+      const status = el('backupTranscriptionStatus');
+      status.className = 'backup-transcription-status processing';
+      status.textContent = 'Menyiapkan audio untuk upload transkripsi…';
 
       let audioBase64 = '';
 
       try {
-        audioBase64 =
-          await blobToBase64_(
-            state.audioBlob
-          );
+        audioBase64 = await blobToBase64_(blob);
       } catch (err) {
         state.backupTranscriptionBusy = false;
-
-        status.className =
-          'backup-transcription-status error';
-
+        status.className = 'backup-transcription-status error';
         status.textContent =
-          'Gagal membaca Audio Cadangan: ' +
-          (
-            err && err.message
-              ? err.message
-              : err
-          );
-
+          'Gagal membaca audio: ' +
+          (err && err.message ? err.message : err);
         updateBackupTranscriptionUI_();
         return;
       }
 
       state.backupTranscriptionRequestId =
-        (
-          state.sessionId ||
-          'REC'
-        ) +
-        '-BACKUP-' +
+        (state.sessionId || 'REC') +
+        '-FILE-' +
         Date.now();
 
       status.textContent =
-        'Audio dikirim ke backend untuk ditranskripsikan. Jangan tutup perekam…';
+        'Mengunggah audio ke layanan transkripsi…';
 
       notify({
-        type:
-          'NOTULEN_BACKUP_TRANSCRIBE_REQUEST',
-        requestId:
-          state.backupTranscriptionRequestId,
-        sessionId:
-          state.sessionId,
-        language:
-          language,
+        type:'NOTULEN_BACKUP_TRANSCRIBE_REQUEST',
+        requestId:state.backupTranscriptionRequestId,
+        sessionId:state.sessionId,
+        language:language,
         mimeType:
-          state.audioBlob.type ||
-          state.mediaMime ||
+          blob.type ||
+          options.mimeType ||
           'audio/webm',
-        audioBase64:
-          audioBase64,
+        audioBase64:audioBase64,
         mergeMode:
+          options.mergeMode ||
           el('backupTranscriptMode').value ||
-          'replace'
+          'replace',
+        fileName:options.fileName || ''
       });
+    }
+
+    async function transcribeBackupAudio_() {
+      if (!state.audioBlob || !state.audioBlob.size) {
+        show('Audio Cadangan belum tersedia.','info');
+        return;
+      }
+
+      await transcribeAudioBlob_(
+        state.audioBlob,
+        {
+          mergeMode:el('backupTranscriptMode').value || 'replace',
+          fileName:'Audio Cadangan'
+        }
+      );
+    }
+
+    async function transcribeSelectedAudioFile_() {
+      if (!state.manualAudioFile) {
+        show('Pilih file audio terlebih dahulu.','info');
+        return;
+      }
+
+      await transcribeAudioBlob_(
+        state.manualAudioFile,
+        {
+          mergeMode:el('backupTranscriptMode').value || 'replace',
+          fileName:state.manualAudioFile.name
+        }
+      );
     }
 
     function handleBackupTranscriptionResult_(data) {
@@ -4257,12 +4493,15 @@
         'backup-transcription-status success';
 
       status.textContent =
-        '✓ Audio Cadangan berhasil ditranskripsikan' +
+        '✓ Audio berhasil ditranskripsikan' +
         (
-          data.processingMs
-            ? ' • ' +
-              data.processingMs +
-              ' ms'
+          data.uploadMs
+            ? ' • upload ' + data.uploadMs + ' ms'
+            : ''
+        ) +
+        (
+          data.transcribeMs
+            ? ' • transkripsi ' + data.transcribeMs + ' ms'
             : ''
         ) +
         '.';
@@ -4273,6 +4512,34 @@
       );
 
       updateBackupTranscriptionUI_();
+    }
+
+    function maybeAutoTranscribeAfterStop_() {
+      if (
+        !isMobileRecorder_() ||
+        !state.mobilePostRecordMode ||
+        !state.autoTranscribeAfterStop ||
+        state.backupTranscriptionBusy ||
+        !state.audioBlob ||
+        !state.audioBlob.size
+      ) {
+        return;
+      }
+
+      setTimeout(
+        function() {
+          if (
+            !state.sessionActive &&
+            state.audioBlob &&
+            state.audioBlob.size &&
+            !state.backupTranscriptionBusy
+          ) {
+            setMobilePrimaryView_('audio');
+            transcribeBackupAudio_();
+          }
+        },
+        450
+      );
     }
 
     function setAudioBlob(blob) {
@@ -4310,7 +4577,7 @@
         player.volume = 1.0;
         await player.play();
         show(
-          'Tes playback berjalan. Untuk membuat teks, gunakan tombol “Transkripsikan Audio” — audio dibaca langsung dari file cadangan, bukan melalui speaker/mikrofon.',
+          'Tes playback berjalan. Untuk membuat teks gunakan Transkripsikan Audio; file diproses langsung tanpa diputar ulang ke mikrofon.',
           'success'
         );
       } catch (err) {
@@ -4662,7 +4929,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.6',
+        version:'3.0.2.7',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
