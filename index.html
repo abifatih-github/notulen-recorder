@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
-  <title>Perekam Notulen Rapat v3.0.2.4.1</title>
+  <title>Perekam Notulen Rapat v3.0.2.4.2</title>
 
   <style>
     :root {
@@ -564,7 +564,7 @@
     }
   
     /* =========================================================
-       v3.0.2.4.1 — MOBILE RECORDER UX REDESIGN
+       v3.0.2.4.2 — MOBILE RECORDER UX REDESIGN
        ========================================================= */
     .mobile-settings-toggle,.mobile-bottom-nav,.mobile-more-backdrop,.mobile-more-sheet{display:none}
     @media (max-width:640px){
@@ -599,7 +599,7 @@
 
   
     /* =========================================================
-       v3.0.2.4.1 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
+       v3.0.2.4.2 — MOBILE EXCLUSIVE VIEWS + TRANSCRIPTION NOTICE
        ========================================================= */
     .transcription-mode-notice {
       margin:0 0 8px;
@@ -695,6 +695,51 @@
       }
     }
 
+  
+    /* =========================================================
+       v3.0.2.4.2 — MOBILE LIVE TRANSCRIPTION RECOVERY
+       ========================================================= */
+    .transcription-health {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:8px 0;
+      padding:9px 10px;
+      border:1px solid #dbe5ea;
+      border-radius:11px;
+      background:#f8fafc;
+      color:#475569;
+    }
+    .transcription-health-copy { min-width:0; }
+    .transcription-health strong { display:block; font-size:8px; line-height:1.35; }
+    .transcription-health small {
+      display:block; margin-top:2px; color:#64748b; font-size:7px; line-height:1.4;
+    }
+    .transcription-health.listening {
+      border-color:#bbf7d0; background:#f0fdf4; color:#166534;
+    }
+    .transcription-health.warn {
+      border-color:#fde68a; background:#fffbeb; color:#92400e;
+    }
+    .transcription-health.error {
+      border-color:#fecaca; background:#fff1f2; color:#b91c1c;
+    }
+    .transcription-retry-btn {
+      flex:0 0 auto; min-height:34px; padding:7px 9px; border:0; border-radius:9px;
+      background:#0f766e; color:#fff; font-size:7px; font-weight:900; cursor:pointer;
+    }
+    .transcription-retry-btn[hidden] { display:none !important; }
+
+    @media (max-width:640px) {
+      .transcription-health {
+        align-items:stretch; flex-direction:column; gap:7px;
+      }
+      .transcription-health strong { font-size:8.5px; }
+      .transcription-health small { font-size:7.2px; }
+      .transcription-retry-btn { width:100%; min-height:40px; font-size:8px; }
+    }
+
   </style>
 </head>
 
@@ -710,7 +755,7 @@
           </div>
         </div>
 
-        <div class="version">v3.0.2.4.1</div>
+        <div class="version">v3.0.2.4.2</div>
       </div>
 
       <div class="meeting-card">
@@ -851,6 +896,16 @@
 
       <div id="transcriptionModeNotice" class="transcription-mode-notice"></div>
 
+      <div id="transcriptionHealth" class="transcription-health waiting">
+        <div class="transcription-health-copy">
+          <strong id="transcriptionHealthTitle">Menunggu perekaman</strong>
+          <small id="transcriptionHealthDetail">Speech Recognition akan diperiksa saat sesi dimulai.</small>
+        </div>
+        <button type="button" id="btnEnableTranscription" class="transcription-retry-btn" hidden>
+          🎙 Aktifkan Transkripsi
+        </button>
+      </div>
+
       <div id="interim" class="interim">
         Tekan “Mulai Mencatat” untuk memulai.
       </div>
@@ -899,7 +954,7 @@
     </section>
 
     <div id="recorderFootNote" class="foot-note">
-      Audio cadangan v3.0.2.4.1 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
+      Audio cadangan v3.0.2.4.2 disimpan lokal di browser/perangkat dan tidak otomatis diunggah ke Google Drive.
       Ketersediaan MediaRecorder, Speech Recognition, Wake Lock, dan proses background bergantung pada browser/OS.
     </div>
   </main>
@@ -1005,7 +1060,13 @@
       backgrounded:false,
       mobileSettingsExpanded:false,
       mobileMoreOpen:false,
-      mobileView:'summary' 
+      mobileView:'summary',
+      speechStartAttempts:0,
+      speechResultCount:0,
+      speechLastError:'',
+      speechStartReason:'',
+      speechWatchdogTimer:null,
+      speechResultWatchdogTimer:null
     };
 
     function init() {
@@ -1021,6 +1082,12 @@
       el('btnClearBackup').addEventListener('click', clearCurrentBackup);
       el('btnRecover').addEventListener('click', recoverPreviousSession);
       el('btnDiscardRecovery').addEventListener('click', discardRecovery);
+      el('btnEnableTranscription').addEventListener(
+        'click',
+        function() {
+          startRecognitionFromUserGesture_('manual-button');
+        }
+      );
       el('audioSourceMode').addEventListener('change', function() {
         state.sourceMode = el('audioSourceMode').value || 'mic';
         updateAudioSourceHelp();
@@ -1058,7 +1125,7 @@
 
       notify({
         type:'NOTULEN_RECORDER_READY',
-        version:'3.0.2.4.1',
+        version:'3.0.2.4.2',
         speechSupported:state.speechSupported,
         mediaRecorderSupported:
           Boolean(
@@ -1190,6 +1257,18 @@
       if (key === 'transcript') {
         closeMobileMore_();
         setMobilePrimaryView_('transcript');
+
+        if (
+          state.sessionActive &&
+          !state.paused &&
+          !state.stopping &&
+          state.sourceMode !== 'system' &&
+          state.speechSupported &&
+          !state.recognitionListening
+        ) {
+          startRecognitionFromUserGesture_('transcript-tab');
+        }
+
         return;
       }
 
@@ -1231,6 +1310,162 @@
     function closeMobileMore_(){state.mobileMoreOpen=false;const b=el('mobileMoreBackdrop'),s=el('mobileMoreSheet');if(b)b.hidden=true;if(s){s.classList.remove('open');s.setAttribute('aria-hidden','true');}document.body.classList.remove('mobile-more-open');if(isMobileRecorder_()){if(state.mobileView==='transcript')setMobileNavActive_('transcript');else if(state.mobileView==='audio')setMobileNavActive_('audio');else if(state.mobileView==='recovery')setMobileNavActive_('more');else setMobileNavActive_('summary');}}
     function recorderStartLabel_(mode){const mobile=isMobileRecorder_();if(mode==='resume')return mobile?'▶ Lanjut':'▶ Lanjutkan Mencatat';if(mode==='recording')return mobile?'● Merekam':'🔴 Sedang Mencatat';return mobile?'● Mulai':'🔴 Mulai Mencatat';}
 
+    function setTranscriptionHealth_(tone, title, detail, showRetry) {
+      const box = el('transcriptionHealth');
+      if (!box) return;
+
+      box.className = 'transcription-health ' + (tone || 'waiting');
+      el('transcriptionHealthTitle').textContent = title || 'Transkripsi';
+      el('transcriptionHealthDetail').textContent = detail || '';
+      el('btnEnableTranscription').hidden = !showRetry;
+    }
+
+    function clearSpeechWatchdog_() {
+      if (state.speechWatchdogTimer) {
+        clearTimeout(state.speechWatchdogTimer);
+        state.speechWatchdogTimer = null;
+      }
+    }
+
+    function clearSpeechResultWatchdog_() {
+      if (state.speechResultWatchdogTimer) {
+        clearTimeout(state.speechResultWatchdogTimer);
+        state.speechResultWatchdogTimer = null;
+      }
+    }
+
+    function armSpeechStartWatchdog_() {
+      clearSpeechWatchdog_();
+
+      state.speechWatchdogTimer = setTimeout(function() {
+        state.speechWatchdogTimer = null;
+
+        if (
+          state.sessionActive &&
+          !state.recognitionListening &&
+          state.sourceMode !== 'system' &&
+          !state.paused &&
+          !state.stopping
+        ) {
+          setTranscriptionHealth_(
+            'warn',
+            'Transkripsi belum mulai mendengarkan',
+            'Audio recorder aktif, tetapi Speech Recognition belum masuk status listening. Tekan Aktifkan Transkripsi.',
+            true
+          );
+        }
+      }, 2600);
+    }
+
+    function armSpeechResultWatchdog_() {
+      clearSpeechResultWatchdog_();
+
+      const countAtStart = state.speechResultCount;
+
+      state.speechResultWatchdogTimer = setTimeout(function() {
+        state.speechResultWatchdogTimer = null;
+
+        if (
+          state.sessionActive &&
+          state.recognitionListening &&
+          state.speechResultCount === countAtStart &&
+          state.sourceMode !== 'system'
+        ) {
+          setTranscriptionHealth_(
+            'warn',
+            'Transkripsi aktif, belum menerima teks',
+            'Coba bicara dekat mikrofon selama beberapa detik. Jika tetap kosong, tekan Aktifkan Transkripsi untuk restart engine.',
+            true
+          );
+        }
+      }, 8000);
+    }
+
+    function startRecognitionEngine_(reason) {
+      if (
+        state.sourceMode === 'system' ||
+        !state.speechSupported ||
+        !state.recognition ||
+        state.paused ||
+        state.stopping ||
+        state.recognitionListening
+      ) {
+        return false;
+      }
+
+      state.shouldRestartRecognition = true;
+      state.speechStartAttempts += 1;
+      state.speechStartReason = reason || 'auto';
+
+      setTranscriptionHealth_(
+        'waiting',
+        'Memulai Speech Recognition…',
+        isMobileRecorder_()
+          ? 'Menyiapkan engine transkripsi mobile.'
+          : 'Menyiapkan engine transkripsi.',
+        false
+      );
+
+      try {
+        state.recognition.start();
+        armSpeechStartWatchdog_();
+        return true;
+      } catch (err) {
+        state.speechLastError =
+          err && err.name
+            ? String(err.name)
+            : 'start-error';
+
+        setTranscriptionHealth_(
+          'warn',
+          'Transkripsi belum dapat dimulai',
+          'Engine sedang sibuk atau browser menolak start. Coba lagi beberapa saat.',
+          true
+        );
+
+        return false;
+      }
+    }
+
+    function startRecognitionFromUserGesture_(reason) {
+      if (
+        !state.sessionActive ||
+        state.paused ||
+        state.stopping
+      ) {
+        setTranscriptionHealth_(
+          'waiting',
+          'Mulai perekaman terlebih dahulu',
+          'Transkripsi akan aktif bersamaan dengan sesi rekaman.',
+          false
+        );
+        return;
+      }
+
+      if (state.sourceMode === 'system') {
+        setTranscriptionHealth_(
+          'warn',
+          'Mode Audio Sistem tidak mendukung Transkripsi Live',
+          'Gunakan Suara Rapat/Mikrofon atau Speaker Melalui Mikrofon.',
+          false
+        );
+        return;
+      }
+
+      if (state.recognitionListening) {
+        setTranscriptionHealth_(
+          'listening',
+          'Transkripsi sedang mendengarkan',
+          'Speech Recognition sudah aktif.',
+          false
+        );
+        return;
+      }
+
+      clearRecognitionRestartTimer();
+      startRecognitionEngine_(reason || 'user-gesture');
+    }
+
     function initRecognition() {
       const SR =
         window.SpeechRecognition ||
@@ -1253,13 +1488,30 @@
       const recognition = new SR();
 
       recognition.lang = language;
-      recognition.continuous = true;
+
+      // Mobile: short recognition sessions + explicit auto-restart
+      // are more reliable than continuous recognition.
+      recognition.continuous = !isMobileRecorder_();
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       recognition.onstart = function() {
         state.recognitionListening = true;
         state.recognitionInterrupted = false;
+        state.speechLastError = '';
+
+        clearSpeechWatchdog_();
+
+        setTranscriptionHealth_(
+          'listening',
+          'Transkripsi sedang mendengarkan',
+          isMobileRecorder_()
+            ? 'Mode mobile aktif. Ucapkan kalimat dengan jelas; engine akan otomatis dimulai ulang.'
+            : 'Speech Recognition aktif dan menunggu ucapan.',
+          false
+        );
+
+        armSpeechResultWatchdog_();
 
         setChip(
           'speechChip',
@@ -1288,6 +1540,16 @@
 
       recognition.onresult = function(event) {
         let interim = '';
+
+        state.speechResultCount += 1;
+        clearSpeechResultWatchdog_();
+
+        setTranscriptionHealth_(
+          'listening',
+          'Transkripsi menerima suara',
+          'Hasil Speech Recognition sudah diterima dari browser.',
+          false
+        );
 
         for (
           let i = event.resultIndex;
@@ -1330,15 +1592,19 @@
       };
 
       recognition.onerror = function(event) {
-        const code =
-          String(event.error || 'unknown');
+        const code = String(event.error || 'unknown');
+
+        state.speechLastError = code;
+        state.recognitionListening = false;
+
+        clearSpeechWatchdog_();
+        clearSpeechResultWatchdog_();
 
         if (
           code === 'not-allowed' ||
           code === 'service-not-allowed'
         ) {
           state.shouldRestartRecognition = false;
-          state.recognitionListening = false;
 
           setChip(
             'speechChip',
@@ -1346,52 +1612,106 @@
             '📝 Akses transkripsi ditolak'
           );
 
-          const msg =
-            'Akses mikrofon/Speech Recognition ditolak. Audio cadangan dapat tetap digunakan jika izin MediaRecorder tersedia.';
-
-          show(msg, 'error');
+          setTranscriptionHealth_(
+            'error',
+            'Izin Speech Recognition ditolak',
+            'Pastikan izin mikrofon browser aktif, lalu tekan Aktifkan Transkripsi.',
+            true
+          );
 
           notify({
-            type:'NOTULEN_RECORDER_ERROR',
-            message:msg
+            type:'NOTULEN_RECORDER_WARNING',
+            message:'Akses mikrofon/Speech Recognition ditolak. Audio cadangan tetap dapat direkam.'
           });
 
           return;
         }
 
         if (code === 'audio-capture') {
-          state.recognitionListening = false;
+          state.recognitionInterrupted = true;
 
           setChip(
             'speechChip',
             'warn',
-            '📝 Mikrofon transkripsi bermasalah'
+            '📝 Mic transkripsi belum tersedia'
           );
 
-          notify({
-            type:'NOTULEN_RECORDER_WARNING',
-            message:
-              'Speech Recognition kehilangan akses mikrofon. Audio cadangan tetap dipertahankan jika masih aktif.'
-          });
+          setTranscriptionHealth_(
+            'warn',
+            'Speech Recognition belum memperoleh mikrofon',
+            'Audio recorder tetap aktif. Pada HP, tekan Aktifkan Transkripsi atau buka kembali tab Transkrip untuk mencoba ulang.',
+            true
+          );
 
           return;
         }
 
-        if (
-          code === 'no-speech' ||
-          code === 'aborted'
-        ) {
+        if (code === 'network') {
+          state.recognitionInterrupted = true;
+
+          setChip(
+            'speechChip',
+            'warn',
+            '📝 Layanan transkripsi jaringan bermasalah'
+          );
+
+          setTranscriptionHealth_(
+            'warn',
+            'Layanan transkripsi tidak terhubung',
+            'Periksa koneksi internet lalu tekan Aktifkan Transkripsi.',
+            true
+          );
+
           return;
         }
 
-        show(
+        if (code === 'no-speech') {
+          state.recognitionInterrupted = true;
+
+          setTranscriptionHealth_(
+            'warn',
+            'Belum ada ucapan yang dikenali',
+            'Engine aktif, tetapi belum menerima ucapan yang dapat dikenali. Sistem akan mencoba lagi.',
+            false
+          );
+
+          return;
+        }
+
+        if (code === 'aborted') {
+          state.recognitionInterrupted = true;
+          return;
+        }
+
+        setTranscriptionHealth_(
+          'warn',
           'Speech Recognition: ' + code,
-          'info'
+          'Audio cadangan tetap berjalan. Tekan Aktifkan Transkripsi untuk mencoba kembali.',
+          true
         );
       };
 
       recognition.onend = function() {
         state.recognitionListening = false;
+
+        clearSpeechWatchdog_();
+        clearSpeechResultWatchdog_();
+
+        if (
+          state.sessionActive &&
+          !state.paused &&
+          !state.stopping &&
+          state.sourceMode !== 'system'
+        ) {
+          setTranscriptionHealth_(
+            'warn',
+            'Transkripsi sedang dimulai ulang',
+            isMobileRecorder_()
+              ? 'Mode mobile menggunakan sesi pengenalan pendek agar lebih stabil.'
+              : 'Speech Recognition berhenti sementara dan akan dicoba kembali.',
+            false
+          );
+        }
 
         if (
           state.shouldRestartRecognition &&
@@ -1493,6 +1813,21 @@
       state.signalLevel = 'unknown';
       state.lowSignalWarned = false;
       state.highSignalWarned = false;
+
+      state.speechStartAttempts = 0;
+      state.speechResultCount = 0;
+      state.speechLastError = '';
+      state.speechStartReason = '';
+
+      clearSpeechWatchdog_();
+      clearSpeechResultWatchdog_();
+
+      setTranscriptionHealth_(
+        'waiting',
+        'Menunggu Speech Recognition',
+        'Audio akan direkam; transkripsi akan diaktifkan otomatis.',
+        false
+      );
 
       el('recoveryCard').hidden = true;
       el('audioDiagnostic').hidden = true;
@@ -2096,24 +2431,13 @@
 
     function startRecognition() {
       if (
-        state.sourceMode === 'system' ||
-        !state.speechSupported ||
-        !state.recognition ||
         !state.sessionActive ||
-        state.paused ||
-        state.stopping ||
-        state.recognitionListening
+        state.sourceMode === 'system'
       ) {
         return;
       }
 
-      state.shouldRestartRecognition = true;
-
-      try {
-        state.recognition.start();
-      } catch (err) {
-        scheduleRecognitionRestart();
-      }
+      startRecognitionEngine_('auto');
     }
 
     function scheduleRecognitionRestart() {
@@ -2156,13 +2480,18 @@
               return;
             }
 
-            try {
-              state.recognition.start();
-            } catch (err) {
+            const started =
+              startRecognitionEngine_(
+                'auto-restart'
+              );
+
+            if (!started) {
               state.recognitionInterrupted = true;
             }
           },
-          550
+          isMobileRecorder_()
+            ? 320
+            : 550
         );
     }
 
@@ -2325,6 +2654,9 @@
       el('micSelect').disabled = false;
       el('audioProfile').disabled = false;
       state.shouldRestartRecognition = false;
+
+      clearSpeechWatchdog_();
+      clearSpeechResultWatchdog_();
 
       stopTimer();
       stopMeter();
@@ -2794,8 +3126,12 @@
 
       if (mode === 'mixed') {
         node.classList.add('info');
+
         node.textContent =
-          'Mode Campuran merekam Mic + Audio Tab. Transkripsi Live tetap mendengarkan mikrofon; audio tab/sistem tidak ditranskrip langsung.';
+          isMobileRecorder_()
+            ? 'Mode Campuran Mic + Audio Tab umumnya tidak tersedia pada browser HP. Gunakan Suara Rapat/Mikrofon atau Speaker Melalui Mikrofon untuk Transkripsi Live.'
+            : 'Mode Campuran merekam Mic + Audio Tab. Transkripsi Live tetap mendengarkan mikrofon; audio tab/sistem tidak ditranskrip langsung.';
+
         return;
       }
 
@@ -3651,7 +3987,7 @@
       if (!state.sessionId) return;
 
       const meta = {
-        version:'3.0.2.4.1',
+        version:'3.0.2.4.2',
         sessionId:state.sessionId,
         meeting:meeting,
         language:language,
